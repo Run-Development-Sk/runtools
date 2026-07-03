@@ -1,0 +1,85 @@
+- odlaď chybu pri inštalácii v `php-8.3_mysql-5.7` devcontaineri u Vinca na iBooku:
+```
+ERROR: Package 'runtools' requires a different Python: 3.9.2 not in '>=3.10'
+Cannot determine package name from spec 'runtools @
+git+https://git@github.com/RunDevelopmentSk/runtools.git@main'. Check package
+spec for errors.
+```
+
+---
+Ako písať todo:
+
+*****************************************
+POZNÁMKY K HLAVNÉMU ZADANIU (~TIKETU) ABC
+*****************************************
+x dorob toto
+- skontroluj hento
+- oprav tam chybu
+- na stránke KLM:
+    - skontroluj toto
+    x dokonči hento
+    x? ako to mám urobiť?
+        >> Klient povedal že takto...
+- prelož hentamto
+-? tomuto fakt nerozumiem. Ako to mám spraviť?
+-! na toto určite nezabudni!
+-+ toto v pôvodnom odhade nebolo
+x+ toto v pôvodnom odhade nebolo tiež no spravil som to
+
+-----------------------------------------------------------------
+Poznámky k podzadaniu (~podúlohe tiketu) alebo podsekcia poznámok
+-----------------------------------------------------------------
+- na podúlohe som nodeokončil hentamto
+
+------
+Návrhy
+------
+- toto síce zatiaľ klient nechcel ale nakodena funkcionalita by sa mohla rozšíriť takto, treba sa ho spýtať
+
+*****************************
+SYNTAX POZNÁMOK JE NASLEDOVNÁ
+*****************************
+- úloha
+x urobená úloha
+-x zrušená úloha
+-! dôležitá úloha
+x! urobená dôležitá úloha
+-? otázka
+x? zodpovedaná otázka
+    >> Odpoveď na otázku
+-?! dôležitá otázka
+x?! zodpovedaná dôležitá otázka
+    >> Odpoveď na otázku
+-+ úloha ktorá nebola v časovom odhade
+-+! tutti-brutti úloha ktorá nebola v časovom odhade
+x+ úloha ktorá nebola v časovom odhade no urobila sa
+- úloha s podúlohami
+    - podúloha
+    x urobená podúloha
+    -? otázka k úlohe
+    x? zodpovedaná otázka k úlohe >> Odpoveď na otázku
+- poznámka so zoznamom, ktorého položky nie sú podúlohami:
+    -- toto nie je podúloha
+    -- ani toto nie je podúloha
+
+***********************
+HLAVNÉ ZADANIE (~TIKET)
+***********************
+- ...
+
+------------------------------------------------------
+Podzadanie (~podúloha tiketu) alebo podsekcia poznámok
+------------------------------------------------------
+- ...
+
+---------------------------------------------
+Vyhľadávanie úloh pomocou regulárnych výrazov
+---------------------------------------------
+- nedokončené úlohy (aj s otázkami):    ^\s*-[^\-x]
+- dokončené úlohy (aj s otázkami):      ^\s*x\??!?
+- nedokončené úlohy (bez otázok):       ^\s*-[^\-x\?]
+- dokončené úlohy (bez otázok):         ^\s*x!?[^\?]
+- zrušené úlohy:                        ^\s*-x
+- nezodpovedané otázky:                 ^\s*-\?!?
+- zodpovedané otázky:                   ^\s*x\?!?
+- úlohy, ktoré neboli v časovom odhade: ^\s*[\-x]\+!?

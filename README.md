@@ -48,6 +48,14 @@ a nainštaluj s `--break-system-packages` (vhodné v devcontaineri alebo venv):
 pip install -r requirements.txt --break-system-packages
 ```
 
+### Ručne (núdzovo)
+
+Ak inštalácia nie je moťná, tak je úplne postačujúce stiahnúť požadovaný skript z priečinka [https://github.com/RunDevelopmentSk/runtools  > `/src/runtools/`](https://github.com/RunDevelopmentSk/runtools/tree/main/src/runtools) a spúšťať ho ako iné Python skripty, napr.:
+
+```
+python3 dockerinfo.py
+```
+
 ## Aktualizácia
 
 Keďže inštalácia ide vždy z vetvy `main` (bez verzovania), pip/pipx pri
