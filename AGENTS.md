@@ -1,12 +1,25 @@
 ---
-type: "always_apply"
+type: always_apply
+trigger: always_on
 ---
 
-# Project Agent Instructions
+# Instructions for AI agents
 
-Tento súbor je **single source of truth** pre všetkých AI agentov v projekte
-(Augment Code, Claude Code, Antigravity, Codex). Augment Code, Antigravity
-a Codex ho čítajú natívne; Claude Code ho číta cez symlink `CLAUDE.md → AGENTS.md`.
+This file is a **shared source of truth** for all AI agents in the project
+(Auggie, Claude Code, Antigravity, Codex). Auggie, Antigravity
+and Codex read it natively; Claude Code reads it via the symlink `CLAUDE.md → AGENTS.md`.
+
+Configuration details of individual agents and the unified structure are in
+[`docs/ai-agents.md`](docs/ai-agents.md).
+
+Before working, check:
+
+- `.agents/rules/*.md` – modular workspace rules
+
+## Always applicable cross-cutting rules
+
+- @.agents/rules/run.language-policy.md
+- @.agents/rules/run.secret-safety.md
 
 ## Všeobecný popis
 

@@ -1,3 +1,5 @@
+- prelož do angličtiny
+- zapraguj názvové konvencie pre agents, skills, rules a commands
 - odlaď chybu pri inštalácii v `php-8.3_mysql-5.7` devcontaineri u Vinca na iBooku:
 ```
 ERROR: Package 'runtools' requires a different Python: 3.9.2 not in '>=3.10'
@@ -7,79 +9,79 @@ spec for errors.
 ```
 
 ---
-Ako písať todo:
+How to write todo:
 
 *****************************************
-POZNÁMKY K HLAVNÉMU ZADANIU (~TIKETU) ABC
+NOTES ON THE MAIN TASK (~TICKET) ABC
 *****************************************
-x dorob toto
-- skontroluj hento
-- oprav tam chybu
-- na stránke KLM:
-    - skontroluj toto
-    x dokonči hento
-    x? ako to mám urobiť?
-        >> Klient povedal že takto...
-- prelož hentamto
--? tomuto fakt nerozumiem. Ako to mám spraviť?
--! na toto určite nezabudni!
--+ toto v pôvodnom odhade nebolo
-x+ toto v pôvodnom odhade nebolo tiež no spravil som to
+x finish this
+- check that
+- fix the bug there
+- on the KLM page:
+    - check this
+    x finish that
+    x? how should I do this?
+        >> The client said like this...
+- translate that
+-? I really don't understand this. How should I do it?
+-! definitely don't forget this!
+-+ this was not in the original estimate
+x+ this was not in the original estimate either, but I did it
 
 -----------------------------------------------------------------
-Poznámky k podzadaniu (~podúlohe tiketu) alebo podsekcia poznámok
+Notes on subtask (~subtask of the ticket) or notes subsection
 -----------------------------------------------------------------
-- na podúlohe som nodeokončil hentamto
+- on the subtask I haven't finished that
 
-------
-Návrhy
-------
-- toto síce zatiaľ klient nechcel ale nakodena funkcionalita by sa mohla rozšíriť takto, treba sa ho spýtať
+-----------
+Suggestions
+-----------
+- although the client didn't want this yet, the coded functionality could be extended like this, we should ask them
 
-*****************************
-SYNTAX POZNÁMOK JE NASLEDOVNÁ
-*****************************
-- úloha
-x urobená úloha
--x zrušená úloha
--! dôležitá úloha
-x! urobená dôležitá úloha
--? otázka
-x? zodpovedaná otázka
-    >> Odpoveď na otázku
--?! dôležitá otázka
-x?! zodpovedaná dôležitá otázka
-    >> Odpoveď na otázku
--+ úloha ktorá nebola v časovom odhade
--+! tutti-brutti úloha ktorá nebola v časovom odhade
-x+ úloha ktorá nebola v časovom odhade no urobila sa
-- úloha s podúlohami
-    - podúloha
-    x urobená podúloha
-    -? otázka k úlohe
-    x? zodpovedaná otázka k úlohe >> Odpoveď na otázku
-- poznámka so zoznamom, ktorého položky nie sú podúlohami:
-    -- toto nie je podúloha
-    -- ani toto nie je podúloha
+***************************
+NOTE SYNTAX IS AS FOLLOWS
+***************************
+- task
+x completed task
+-x cancelled task
+-! important task
+x! completed important task
+-? question
+x? answered question
+    >> Answer to the question
+-?! important question
+x?! answered important question
+    >> Answer to the question
+-+ task that was not in the time estimate
+-+! tutti-brutti task that was not in the time estimate
+x+ task that was not in the time estimate but was completed
+- task with subtasks
+    - subtask
+    x completed subtask
+    -? question about the task
+    x? answered question about the task >> Answer to the question
+- note with a list whose items are not subtasks:
+    -- this is not a subtask
+    -- neither is this a subtask
 
-***********************
-HLAVNÉ ZADANIE (~TIKET)
-***********************
+*********************
+MAIN TASK (~TICKET)
+*********************
 - ...
 
 ------------------------------------------------------
-Podzadanie (~podúloha tiketu) alebo podsekcia poznámok
+Subtask (~subtask of the ticket) or notes subsection
 ------------------------------------------------------
 - ...
 
----------------------------------------------
-Vyhľadávanie úloh pomocou regulárnych výrazov
----------------------------------------------
-- nedokončené úlohy (aj s otázkami):    ^\s*-[^\-x]
-- dokončené úlohy (aj s otázkami):      ^\s*x\??!?
-- nedokončené úlohy (bez otázok):       ^\s*-[^\-x\?]
-- dokončené úlohy (bez otázok):         ^\s*x!?[^\?]
-- zrušené úlohy:                        ^\s*-x
-- nezodpovedané otázky:                 ^\s*-\?!?
-- zodpovedané otázky:                   ^\s*x\?!?
-- úlohy, ktoré neboli v časovom odhade: ^\s*[\-x]\+!?
+-----------------------------------------
+Searching for tasks using regular expressions
+-----------------------------------------
+- unfinished tasks (including questions): ^\s*-[^\-x]
+- completed tasks (including questions):   ^\s*x\??!?
+- unfinished tasks (excluding questions):  ^\s*-[^\-x\?]
+- completed tasks (excluding questions):    ^\s*x!?[^\?]
+- cancelled tasks:                         ^\s*-x
+- unanswered questions:                    ^\s*-\?!?
+- answered questions:                      ^\s*x\?!?
+- tasks not in the time estimate:          ^\s*[\-x]\+!?

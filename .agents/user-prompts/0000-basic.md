@@ -1,5 +1,3 @@
-Na základe zadania v súbore .ai/prompts/???.md si najprv napíš postup zapracovania do aktuálneho projektu a následne zapracuj toto zadanie.
+For the task in the file .agents/user-prompts/???.md, create an analysis and a proposal for incorporation into the current project. Then, wait for my review of your proposal.
 
-Zapracuj zadanie v súbore .ai/prompts/???.md.
-
-Na základe čoho v docs/old-is-info.md si zhromaždil položky v sekcii "???"?
+Implement the task in the file .agents/user-prompts/???.md.

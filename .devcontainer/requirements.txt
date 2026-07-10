@@ -1,2 +1,2 @@
-# Installed by devcontainer/devcontainer.json > postCreateCommand
-# and by prodcontainer/docker-compose.yml > services.web.command
+# Installed by .devcontainer/devcontainer.json > "postCreateCommand"
+pre-commit
