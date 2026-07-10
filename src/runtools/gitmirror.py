@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-gitmirror.py - Zrkadlenie git repozitára do iného repozitára.
+gitmirror.py - Mirror a git repository to another repository.
 
-Použitie:
+Usage:
     python gitmirror.py <source-repo> <mirror-repo>
 
-Príklad:
+Example:
     python gitmirror.py RunDevelopmentSk/drinkcentrum-is.git RunDevelopmentSk/test.git
 """
 
@@ -21,7 +21,7 @@ import tempfile
 
 
 def normalize_repo(repo: str) -> str:
-    """Doplní prefix git@github.com: a suffix .git ak chýbajú."""
+    """Adds the git@github.com: prefix and .git suffix if missing."""
     if not repo.startswith("git@github.com:"):
         repo = "git@github.com:" + repo
     if not repo.endswith(".git"):
@@ -30,9 +30,9 @@ def normalize_repo(repo: str) -> str:
 
 
 def get_local_name(repo_url: str) -> str:
-    """Odvodí názov lokálneho priečinka z URL repozitára.
+    """Derives the local folder name from the repository URL.
 
-    Príklad: git@github.com:RunDevelopmentSk/test.git -> test
+    Example: git@github.com:RunDevelopmentSk/test.git -> test
     """
     name = repo_url.rstrip("/")
     if name.endswith(".git"):
@@ -41,7 +41,7 @@ def get_local_name(repo_url: str) -> str:
 
 
 def run(cmd: list, cwd: str | None = None, env: dict | None = None) -> None:
-    """Spustí príkaz, vypíše ho a pri chybe ukončí skript."""
+    """Runs a command, prints it, and exits the script on error."""
     display = " ".join(cmd)
     if cwd:
         print(f"[{cwd}]$ {display}")
@@ -49,66 +49,66 @@ def run(cmd: list, cwd: str | None = None, env: dict | None = None) -> None:
         print(f"$ {display}")
     result = subprocess.run(cmd, cwd=cwd, env=env)
     if result.returncode != 0:
-        print(f"Chyba: príkaz zlyhal s návratovým kódom {result.returncode}")
+        print(f"Error: command failed with return code {result.returncode}")
         sys.exit(1)
 
 
 def ask_continue(path: str) -> bool:
-    """Vypýta sa používateľa, či prepísať existujúci priečinok."""
+    """Asks the user whether to overwrite an existing folder."""
     try:
-        response = input(f"\nUpozornenie: priečinok '{path}' už existuje.\n" "Pokračovať a prepísať ho? [y/N] ")
+        response = input(f"\nWarning: folder '{path}' already exists.\n" "Continue and overwrite it? [y/N] ")
     except EOFError:
         return False
     return response.strip().lower() == "y"
 
 
 def ensure_removed(path: str, always: bool = False) -> None:
-    """Odstráni priečinok ak existuje. Ak always=False, pýta sa používateľa."""
+    """Removes the folder if it exists. If always=False, asks the user."""
     if os.path.exists(path):
         if not always and not ask_continue(path):
-            print("Prerušené.")
+            print("Aborted.")
             sys.exit(0)
         shutil.rmtree(path)
 
 
 def validate_mirror_repo(repo_url: str) -> None:
-    """Overí, že mirror-repo obsahuje 'test' ako samostatné slovo v názve.
+    """Verifies that the mirror-repo contains 'test' as a standalone word in its name.
 
-    Slovo 'test' musí byť ohraničené začiatkom/koncom reťazca alebo
-    ne-alfanumerickým znakom (napr. pomlčka, lomka, bodka).
-    Príklady, ktoré PREJDÚ:  test, test-repo, my-test, my-test-repo
-    Príklady, ktoré NEPREJDÚ: latest, contest, testing, attest
+    The word 'test' must be bounded by the start/end of the string or by a
+    non-alphanumeric character (e.g. hyphen, slash, dot).
+    Examples that PASS:  test, test-repo, my-test, my-test-repo
+    Examples that FAIL: latest, contest, testing, attest
     """
     name = get_local_name(repo_url)
     if not re.search(r"(?<![a-zA-Z0-9])test(?![a-zA-Z0-9])", name, re.IGNORECASE):
         print(
-            f"Chyba: mirror-repo '{name}' neobsahuje 'test' ako samostatné slovo.\n"
-            "Bezpečnostná kontrola zabraňuje prepísaniu produkčného repozitára.\n"
-            "Príklady platných názvov: test, test-01, test-repo, my-test, my-test-v2"
+            f"Error: mirror-repo '{name}' does not contain 'test' as a standalone word.\n"
+            "This safety check prevents overwriting a production repository.\n"
+            "Examples of valid names: test, test-01, test-repo, my-test, my-test-v2"
         )
         sys.exit(1)
 
 
 def ask_ssh_passphrase() -> str:
-    """Vypýta si SSH heslo od používateľa (skrytý vstup)."""
-    return getpass.getpass("Heslo k SSH kľúču (Enter = bez hesla): ")
+    """Prompts the user for the SSH passphrase (hidden input)."""
+    return getpass.getpass("SSH key passphrase (Enter = no passphrase): ")
 
 
 def create_ssh_env(passphrase: str) -> tuple[dict, str]:
-    """Vytvorí env s dočasným SSH_ASKPASS skriptom.
+    """Creates an env with a temporary SSH_ASKPASS script.
 
-    SSH/git zavolá tento skript vždy, keď potrebuje heslo ku kľúču –
-    nie je teda potrebné poznať cestu ku kľúču ani spúšťať ssh-agent.
-    Vracia dvojicu (env, cesta_k_askpass_skriptu).
+    SSH/git calls this script whenever it needs the key's passphrase –
+    so there's no need to know the key's path or run ssh-agent.
+    Returns a tuple of (env, path_to_askpass_script).
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False, encoding="utf-8") as tf:
         tf.write(f"#!/bin/sh\nprintf '%s' {shlex.quote(passphrase)}\n")
         askpass_path = tf.name
-    os.chmod(askpass_path, stat.S_IRWXU)  # chmod 700, len vlastník môže čítať/spustiť
+    os.chmod(askpass_path, stat.S_IRWXU)  # chmod 700, only the owner can read/execute
 
     env = os.environ.copy()
     env["SSH_ASKPASS"] = askpass_path
-    env["SSH_ASKPASS_REQUIRE"] = "force"  # použiť askpass aj bez X servera / terminálu
+    env["SSH_ASKPASS_REQUIRE"] = "force"  # use askpass even without an X server / terminal
     env.pop("DISPLAY", None)
 
     return env, askpass_path
@@ -116,8 +116,8 @@ def create_ssh_env(passphrase: str) -> tuple[dict, str]:
 
 def main() -> None:
     if len(sys.argv) != 3:
-        print(f"Použitie: python {sys.argv[0]} <source-repo> <mirror-repo>")
-        print(f"Príklad:  python {sys.argv[0]} RunDevelopmentSk/drinkcentrum-is RunDevelopmentSk/test")
+        print(f"Usage: python {sys.argv[0]} <source-repo> <mirror-repo>")
+        print(f"Example:  python {sys.argv[0]} RunDevelopmentSk/drinkcentrum-is RunDevelopmentSk/test")
         sys.exit(1)
 
     source_repo = normalize_repo(sys.argv[1])
@@ -126,26 +126,26 @@ def main() -> None:
 
     validate_mirror_repo(mirror_repo)
 
-    # Tmp priečinky s prefixom/sufixom __ aby sa predišlo kolíziám
+    # Tmp folders with a __ prefix/suffix to avoid collisions
     tmp_init = f"__{local_name}_init__"
     tmp_bare = f"__{local_name}_bare__"
     tmp_src = f"__{local_name}_src__"
 
     print(f"Source repo : {source_repo}")
     print(f"Mirror repo : {mirror_repo}")
-    print(f"Lokálny cieľ: ./{local_name}/")
+    print(f"Local target: ./{local_name}/")
 
-    # --- SSH heslo ---
+    # --- SSH passphrase ---
     print()
     passphrase = ask_ssh_passphrase()
     ssh_env, askpass_path = create_ssh_env(passphrase)
 
     try:
-        # --- Overenie existencie finálneho priečinka ---
+        # --- Check whether the final folder already exists ---
         ensure_removed(local_name)
 
-        # --- Krok 1: Vytvorenie prázdneho repozitára a jeho odoslanie do mirror-repo ---
-        print("\n=== Krok 1: Resetovanie histórie mirror-repo ===")
+        # --- Step 1: Create an empty repository and push it to mirror-repo ---
+        print("\n=== Step 1: Resetting mirror-repo history ===")
         for tmp in (tmp_init, tmp_bare):
             ensure_removed(tmp, always=True)
 
@@ -166,15 +166,15 @@ def main() -> None:
         shutil.rmtree(tmp_init)
         shutil.rmtree(tmp_bare)
 
-        # --- Krok 2: Naklonuj source-repo a odošli ho do mirror-repo ---
-        print("\n=== Krok 2: Zrkadlenie source-repo do mirror-repo ===")
+        # --- Step 2: Clone source-repo and push it to mirror-repo ---
+        print("\n=== Step 2: Mirroring source-repo to mirror-repo ===")
         ensure_removed(tmp_src, always=True)
 
         run(["git", "clone", "--mirror", source_repo, tmp_src], env=ssh_env)
         run(["git", "remote", "set-url", "origin", mirror_repo], cwd=tmp_src, env=ssh_env)
 
-        # Odstránenie read-only GitHub refs (refs/pull/*) pred mirror pushom,
-        # aby GitHub neodmietol push s "deny updating a hidden ref".
+        # Remove read-only GitHub refs (refs/pull/*) before the mirror push,
+        # so GitHub doesn't reject the push with "deny updating a hidden ref".
         hidden = subprocess.run(
             ["git", "for-each-ref", "--format=%(refname)", "refs/pull/"],
             cwd=tmp_src,
@@ -188,14 +188,14 @@ def main() -> None:
 
         shutil.rmtree(tmp_src)
 
-        # --- Krok 3: Lokálny klon mirror-repo s odkazom na source ---
-        print("\n=== Krok 3: Vytvorenie lokálneho klonu mirror-repo ===")
+        # --- Step 3: Local clone of mirror-repo with a reference to source ---
+        print("\n=== Step 3: Creating a local clone of mirror-repo ===")
         run(["git", "clone", mirror_repo, local_name], env=ssh_env)
         run(["git", "remote", "add", "source", source_repo], cwd=local_name, env=ssh_env)
-        # Zakáž push do source
+        # Disable push to source
         # run(["git", "remote", "set-url", "--push", "source", "DISABLED"], cwd=local_name, env=ssh_env)
 
-        print(f"\nHotovo! Mirror repo je naklonovaný v ./{local_name}/")
+        print(f"\nDone! Mirror repo cloned to ./{local_name}/")
         print(f"  origin -> {mirror_repo}  (fetch + push)")
         print(f"  source -> {source_repo}  (fetch only, push DISABLED)")
 

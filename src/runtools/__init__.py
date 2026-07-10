@@ -1,1 +1,1 @@
-"""Pomocné Python skripty pre projekty RunDevelopment."""
+"""Helper Python scripts for RunDevelopment projects."""

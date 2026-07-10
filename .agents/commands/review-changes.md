@@ -1,19 +1,19 @@
 ---
-description: Skontroluje necommitnuté zmeny, zhrnie ich a upozorní na potenciálne problémy pred commitom.
+description: Checks uncommitted changes, summarizes them, and flags potential issues before committing.
 ---
 
 # Review Changes
 
-Skontroluj aktuálne necommitnuté zmeny v repozitári a priprav prehľad pre code review.
+Check the current uncommitted changes in the repository and prepare an overview for code review.
 
-## Kroky
+## Steps
 
-1. Zobraz zoznam zmenených súborov: `git status --short`
-2. Zobraz diff zmenených súborov: `git diff`
-3. Skontroluj, či zmeny:
-   - Neobsahujú debug výpisy alebo `print()` určené len na vývoj
-   - Neobsahujú zakomentovaný kód (skôr zmaž než zakomentovaj)
-   - Neobsahujú citlivé údaje (heslá, API kľúče, tokeny)
-   - Sú konzistentné s konvenciami projektu z `AGENTS.md`
-4. Zhrň zmeny stručne: čo sa menilo a prečo
-5. Ak sú problémy, vypíš ich zoznam; ak nie, potvrď, že zmeny vyzerajú v poriadku
+1. Show the list of changed files: `git status --short`
+2. Show the diff of changed files: `git diff`
+3. Check whether the changes:
+   - Contain no debug output or `print()` calls intended only for development
+   - Contain no commented-out code (prefer deleting over commenting out)
+   - Contain no sensitive data (passwords, API keys, tokens)
+   - Are consistent with the project conventions from `AGENTS.md`
+4. Briefly summarize the changes: what changed and why
+5. If there are issues, list them; if not, confirm that the changes look fine

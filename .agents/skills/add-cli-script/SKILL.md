@@ -1,26 +1,26 @@
 ---
 name: add-cli-script
-description: Pridanie nového pomocného Python CLI skriptu do projektu runtools podľa projektových konvencií. Použi keď máš vytvoriť nový samostatne spustiteľný nástroj a sprístupniť ho ako konzolový príkaz.
+description: Adding a new helper Python CLI script to the runtools project according to project conventions. Use when you need to create a new independently executable tool and expose it as a console command.
 ---
 
 # add-cli-script
 
-Nový pomocný nástroj patrí do `src/runtools/<name>.py` a sprístupňuje sa ako
-konzolový príkaz cez `pyproject.toml` → `[project.scripts]`. Každý skript musí
-byť spustiteľný aj samostatne (`python ./src/runtools/<name>.py`).
+A new helper tool belongs in `src/runtools/<name>.py` and is exposed as a
+console command via `pyproject.toml` → `[project.scripts]`. Every script must
+also be executable standalone (`python ./src/runtools/<name>.py`).
 
-## Konvencie (vzor podľa existujúcich skriptov)
+## Conventions (pattern based on existing scripts)
 
-- Cieľová verzia je Python 3.10+ (viď `pyproject.toml`).
-- Preferuj štandardnú knižnicu; novú závislosť pridávaj cez package manager (pip),
-  nie ručnou úpravou `pyproject.toml`.
-- `main()` vracia int (exit code): `0` pri úspechu, nenulové pri chybe.
-- Na konci súboru je vždy `if __name__ == "__main__": raise SystemExit(main())`.
-- `print()` je v týchto CLI nástrojoch určený na výstup pre používateľa.
-- Pri `subprocess.run(...)` použi explicitné `check=` a ošetri návratový kód.
-- Pri práci so súbormi over existenciu a práva (vzor v `gitexport.py`).
+- The target version is Python 3.10+ (see `pyproject.toml`).
+- Prefer the standard library; add a new dependency via the package manager (pip),
+  not by manually editing `pyproject.toml`.
+- `main()` returns an int (exit code): `0` on success, non-zero on error.
+- The end of the file always has `if __name__ == "__main__": raise SystemExit(main())`.
+- `print()` is intended as user-facing output in these CLI tools.
+- For `subprocess.run(...)`, use an explicit `check=` and handle the return code.
+- When working with files, verify existence and permissions (pattern in `gitexport.py`).
 
-## Šablóna skriptu
+## Script template
 
 ```python
 #!/usr/bin/env python3
@@ -30,7 +30,7 @@ import sys
 def print_help():
     print("python3 <name>.py [ARGS]")
     print()
-    print("Stručný popis čo nástroj robí.")
+    print("Brief description of what the tool does.")
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
         print_help()
         return 0
 
-    # ... logika nástroja ...
+    # ... tool logic ...
 
     return 0
 
@@ -49,27 +49,27 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-## Registrácia konzolového príkazu
+## Registering the console command
 
-Do `pyproject.toml` pridaj do sekcie `[project.scripts]` riadok:
+Add a line to `pyproject.toml` in the `[project.scripts]` section:
 
 ```toml
 <name> = "runtools.<name>:main"
 ```
 
-Po inštalácii (`pipx install --force …` alebo `pip install -e .`) je príkaz
-dostupný globálne ako `<name>`.
+After installation (`pipx install --force …` or `pip install -e .`), the
+command is available globally as `<name>`.
 
 ## Checklist
 
-- [ ] Súbor `src/runtools/<name>.py` so `main() -> int` a `raise SystemExit(main())`
-- [ ] Skript je spustiteľný aj samostatne: `python ./src/runtools/<name>.py`
-- [ ] Príkaz zaregistrovaný v `pyproject.toml` → `[project.scripts]`
-- [ ] Nástroj doplnený do zoznamu príkazov v `README.md`
-- [ ] Nové závislosti (ak nejaké) pridané cez package manager, nie ručne
+- [ ] File `src/runtools/<name>.py` with `main() -> int` and `raise SystemExit(main())`
+- [ ] The script is also executable standalone: `python ./src/runtools/<name>.py`
+- [ ] The command is registered in `pyproject.toml` → `[project.scripts]`
+- [ ] The tool is added to the list of commands in `README.md`
+- [ ] New dependencies (if any) are added via the package manager, not manually
 
 ## Anti-pattern
 
-- ❌ Neumiestňuj logiku mimo `main()` tak, že sa spustí už pri importe modulu.
-- ❌ Nehardkóduj heslá/tokeny; URL chránené heslom sťahuj cez `curl -u …` (viď `AGENTS.md`).
-- ❌ Nepridávaj závislosť ručným zápisom do `pyproject.toml` – použi package manager.
+- ❌ Don't place logic outside `main()` such that it runs already on module import.
+- ❌ Don't hardcode passwords/tokens; download password-protected URLs via `curl -u …` (see `AGENTS.md`).
+- ❌ Don't add a dependency by manually editing `pyproject.toml` – use the package manager.

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "runtools"
 version = "0.1.0"
-description = "Pomocné Python skripty pre projekty RunDevelopment."
+description = "Helper Python scripts for RunDevelopment projects."
 requires-python = ">=3.10"
 
 [project.scripts]

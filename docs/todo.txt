@@ -1,6 +1,6 @@
-- prelož do angličtiny
-- zapraguj názvové konvencie pre agents, skills, rules a commands
-- odlaď chybu pri inštalácii v `php-8.3_mysql-5.7` devcontaineri u Vinca na iBooku:
+- translate to English
+- enforce naming conventions for agents, skills, rules and commands
+- debug the installation error in the `php-8.3_mysql-5.7` devcontainer on Vinco's iBook:
 ```
 ERROR: Package 'runtools' requires a different Python: 3.9.2 not in '>=3.10'
 Cannot determine package name from spec 'runtools @

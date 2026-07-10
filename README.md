@@ -1,76 +1,77 @@
 # runtools
 
-Pomocné Python skripty pre projekty RunDevelopment. Po inštalácii sú
-k dispozícii ako konzolové príkazy:
+Helper Python scripts for RunDevelopment projects. After installation they
+are available as console commands:
 
-- `dockerinfo` – prehľad Docker images, kontajnerov, volumes a build cache
-- `gitexport` – export zmien z Git repozitára
-- `gitmirror` – zrkadlenie Git repozitára do iného repozitára
+- `dockerinfo` – overview of Docker images, containers, volumes and build cache
+- `gitexport` – export changes from a Git repository
+- `gitmirror` – mirror a Git repository to another repository
 
-## Inštalácia
+## Installation
 
-> **Poznámka:** Python 3.12+ na Debian/Ubuntu systémoch blokuje inštaláciu
-> balíkov priamo do systémového Pythonu (PEP 668). Pre CLI nástroje odporúčame
-> `pipx`, ktorý to rieši automaticky.
+> **Note:** Python 3.12+ on Debian/Ubuntu systems blocks installing
+> packages directly into the system Python (PEP 668). For CLI tools we
+> recommend `pipx`, which handles this automatically.
 
-### Cez `pipx` (odporúčané)
+### Via `pipx` (recommended)
 
-`pipx` nainštaluje balík do izolovaného virtuálneho prostredia a konzolové
-príkazy (`dockerinfo`, `gitexport`, `gitmirror`) sprístupní globálne v `PATH`.
+`pipx` installs the package into an isolated virtual environment and makes
+the console commands (`dockerinfo`, `gitexport`, `gitmirror`) globally
+available in `PATH`.
 
-**Inštalácia `pipx`** (ak ho ešte nemáš):
+**Installing `pipx`** (if you don't have it yet):
 
 ```bash
 sudo apt install pipx
 pipx ensurepath
 ```
 
-Po `ensurepath` reštartuj terminál (alebo spusti `source ~/.bashrc`), aby sa
-cesta prejavila.
+After `ensurepath`, restart your terminal (or run `source ~/.bashrc`) for the
+path change to take effect.
 
-**Inštalácia `runtools`:**
+**Installing `runtools`:**
 
 ```bash
 pipx install "runtools @ git+https://git@github.com/RunDevelopmentSk/runtools.git@main"
 ```
 
-### Cez `requirements.txt` (devcontainer / venv)
+### Via `requirements.txt` (devcontainer / venv)
 
-Pridaj do `requirements.txt`:
+Add to `requirements.txt`:
 
 ```text
 runtools @ git+https://git@github.com/RunDevelopmentSk/runtools.git@main
 ```
 
-a nainštaluj s `--break-system-packages` (vhodné v devcontaineri alebo venv):
+and install with `--break-system-packages` (suitable in a devcontainer or venv):
 
 ```bash
 pip install -r requirements.txt --break-system-packages
 ```
 
-### Ručne (núdzovo)
+### Manually (as a fallback)
 
-Ak inštalácia nie je možná, tak je úplne postačujúce stiahnúť požadovaný skript z priečinka [https://github.com/RunDevelopmentSk/runtools  > `/src/runtools/`](https://github.com/RunDevelopmentSk/runtools/tree/main/src/runtools) a spúšťať ho ako iné Python skripty, napr.:
+If installation is not possible, it's entirely sufficient to download the required script from the folder [https://github.com/RunDevelopmentSk/runtools  > `/src/runtools/`](https://github.com/RunDevelopmentSk/runtools/tree/main/src/runtools) and run it like any other Python script, e.g.:
 
 ```
 python3 dockerinfo.py
 ```
 
-## Aktualizácia
+## Updating
 
-Keďže inštalácia ide vždy z vetvy `main` (bez verzovania), pip/pipx pri
-opätovnom spustení nemusí zaznamenať zmenu commit hashu.
+Since installation is always done from the `main` branch (without versioning), pip/pipx
+may not detect a commit hash change on re-run.
 
-### Cez `pipx`
+### Via `pipx`
 
 ```bash
 pipx install --force "runtools @ git+https://git@github.com/RunDevelopmentSk/runtools.git@main"
 ```
 
-(`pipx upgrade runtools` nie je spoľahlivé pri inštalácii z gitu bez tagov —
-preto `--force`.)
+(`pipx upgrade runtools` is not reliable when installing from git without tags —
+hence `--force`.)
 
-### Cez `requirements.txt`
+### Via `requirements.txt`
 
 ```bash
 pip install --upgrade --force-reinstall -r requirements.txt --break-system-packages

@@ -21,21 +21,21 @@ Before working, check:
 - @.agents/rules/run.language-policy.md
 - @.agents/rules/run.secret-safety.md
 
-## Všeobecný popis
+## General description
 
-Tento projekt slúži na vývoj pomocných Python skriptov. Skripty sú písané:
+This project is used for developing helper Python scripts. The scripts are written:
 
-- pre Python 3.10+ (viď aj `pyproject.toml`)
-- tak, aby každý z nich mohol byť spustiteľný aj samostatne (napr. `python ./src/runtools/dockerinfo.py`)
+- for Python 3.10+ (see also `pyproject.toml`)
+- so that each of them can also be run standalone (e.g. `python ./src/runtools/dockerinfo.py`)
 
-Viď aj `README.md`.
+See also `README.md`.
 
-## AI agenti
+## AI agents
 
-Viď `docs/ai-agents.md`.
+See `docs/ai-agents.md`.
 
-## Rôzne
+## Miscellaneous
 
-### Načítanie URL adries chránených pomocou hesla
+### Fetching password-protected URLs
 
-Pri načítaní URL adries chránených pomocou hesla použi `curl`. Napríklad pri basic HTTP authentication použi `curl -u <user>:<pwd> https://example.sk/some/protected/page`
+When fetching password-protected URLs, use `curl`. For example, for basic HTTP authentication use `curl -u <user>:<pwd> https://example.sk/some/protected/page`

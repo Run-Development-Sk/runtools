@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zobrazí prehľad Docker images, kontajnerov, volumes a build cache zoradených podľa veľkosti."""
+"""Shows an overview of Docker images, containers, volumes and build cache sorted by size."""
 
 import subprocess
 import re
@@ -7,7 +7,7 @@ import sys
 
 
 def parse_size_to_bytes(size_str: str) -> int:
-    """Prevedie textovú veľkosť (napr. '1.5GB', '500MB', '2kB') na bajty."""
+    """Converts a text size (e.g. '1.5GB', '500MB', '2kB') to bytes."""
     size_str = size_str.strip()
     units = {
         "B":   1,
@@ -25,7 +25,7 @@ def parse_size_to_bytes(size_str: str) -> int:
         value = float(match.group(1))
         unit = match.group(2).upper()
         return int(value * units.get(unit, 1))
-    # Ak je číslo bez jednotky, predpokladáme bajty
+    # If the number has no unit, assume bytes
     try:
         return int(float(size_str))
     except ValueError:
@@ -33,7 +33,7 @@ def parse_size_to_bytes(size_str: str) -> int:
 
 
 def format_size(size_bytes: int) -> str:
-    """Formátuje bajty do čitateľnej podoby."""
+    """Formats bytes into a human-readable form."""
     for unit, threshold in [("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("KB", 1e3)]:
         if size_bytes >= threshold:
             return f"{size_bytes / threshold:.2f} {unit}"
@@ -42,8 +42,8 @@ def format_size(size_bytes: int) -> str:
 
 def get_volumes_with_sizes() -> list[tuple[str, int, str]]:
     """
-    Vráti zoznam (názov, veľkosť_v_bajtoch, veľkosť_text) pre všetky Docker volumes.
-    Využíva 'docker system df -v' pre získanie veľkostí.
+    Returns a list of (name, size_in_bytes, size_text) for all Docker volumes.
+    Uses 'docker system df -v' to obtain the sizes.
     """
     try:
         result = subprocess.run(
@@ -51,10 +51,10 @@ def get_volumes_with_sizes() -> list[tuple[str, int, str]]:
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Chyba pri spustení docker: {e.stderr}", file=sys.stderr)
+        print(f"Error running docker: {e.stderr}", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print("Docker nie je nainštalovaný alebo nie je dostupný v PATH.", file=sys.stderr)
+        print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
     volumes = []
@@ -64,7 +64,7 @@ def get_volumes_with_sizes() -> list[tuple[str, int, str]]:
     for line in result.stdout.splitlines():
         stripped = line.strip()
 
-        # Detekcia začiatku sekcie volumes
+        # Detect the start of the volumes section
         if re.match(r"local volumes", stripped, re.IGNORECASE):
             in_volumes_section = True
             header_found = False
@@ -73,19 +73,19 @@ def get_volumes_with_sizes() -> list[tuple[str, int, str]]:
         if not in_volumes_section:
             continue
 
-        # Preskočiť hlavičku tabuľky a poznačiť si, že sme za ňou
+        # Skip the table header and note that we're past it
         if re.match(r"VOLUME\s+NAME", stripped, re.IGNORECASE):
             header_found = True
             continue
 
-        # Prázdny riadok pred hlavičkou preskočíme, za hlavičkou ukončíme sekciu
+        # Skip a blank line before the header; after the header, end the section
         if stripped == "":
             if header_found:
                 in_volumes_section = False
                 header_found = False
             continue
 
-        # Riadky s dátami (až po nájdení hlavičky)
+        # Data rows (only after the header is found)
         if header_found:
             parts = stripped.split()
             if len(parts) >= 3:
@@ -99,8 +99,8 @@ def get_volumes_with_sizes() -> list[tuple[str, int, str]]:
 
 def get_containers_with_sizes() -> list[tuple[str, int, int, str]]:
     """
-    Vráti zoznam (názov, vlastná_veľkosť_bytes, virtuálna_veľkosť_bytes, status)
-    pre všetky Docker kontajnery. Využíva 'docker ps -a --size'.
+    Returns a list of (name, own_size_bytes, virtual_size_bytes, status)
+    for all Docker containers. Uses 'docker ps -a --size'.
     """
     try:
         result = subprocess.run(
@@ -109,14 +109,14 @@ def get_containers_with_sizes() -> list[tuple[str, int, int, str]]:
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Chyba pri spustení docker: {e.stderr}", file=sys.stderr)
+        print(f"Error running docker: {e.stderr}", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print("Docker nie je nainštalovaný alebo nie je dostupný v PATH.", file=sys.stderr)
+        print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
     containers = []
-    # Formát SIZE: "1.71GB (virtual 4.22GB)"
+    # SIZE format: "1.71GB (virtual 4.22GB)"
     size_pattern = re.compile(r"^([\d.]+\s*\S+)\s+\(virtual\s+([\d.]+\s*\S+)\)$", re.IGNORECASE)
 
     for line in result.stdout.splitlines():
@@ -141,8 +141,8 @@ def get_containers_with_sizes() -> list[tuple[str, int, int, str]]:
 
 def get_networks_summary() -> tuple[list[tuple[str, str, str]], int]:
     """
-    Vráti (zoznam (name, driver, subnet), celkový_počet_všetkých_sietí).
-    Využíva 'docker network ls' a 'docker network inspect'.
+    Returns (list of (name, driver, subnet), total_count_of_all_networks).
+    Uses 'docker network ls' and 'docker network inspect'.
     """
     try:
         ls_result = subprocess.run(
@@ -150,10 +150,10 @@ def get_networks_summary() -> tuple[list[tuple[str, str, str]], int]:
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Chyba pri spustení docker: {e.stderr}", file=sys.stderr)
+        print(f"Error running docker: {e.stderr}", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print("Docker nie je nainštalovaný alebo nie je dostupný v PATH.", file=sys.stderr)
+        print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
     all_networks = []
@@ -168,7 +168,7 @@ def get_networks_summary() -> tuple[list[tuple[str, str, str]], int]:
         if driver == "bridge":
             bridge_ids.append(net_id)
 
-    # Pre bridge siete zisti subnet cez inspect
+    # For bridge networks, determine the subnet via inspect
     networks = []
     if bridge_ids:
         insp = subprocess.run(
@@ -191,9 +191,9 @@ def get_networks_summary() -> tuple[list[tuple[str, str, str]], int]:
 
 def get_images_with_sizes() -> list[tuple[str, int, int, int, str]]:
     """
-    Vráti zoznam (názov, unique_bytes, shared_bytes, virtual_bytes, containers)
-    pre všetky Docker images. unique_bytes = skutočné miesto na disku.
-    Využíva 'docker system df -v'.
+    Returns a list of (name, unique_bytes, shared_bytes, virtual_bytes, containers)
+    for all Docker images. unique_bytes = actual disk space used.
+    Uses 'docker system df -v'.
     """
     try:
         result = subprocess.run(
@@ -201,10 +201,10 @@ def get_images_with_sizes() -> list[tuple[str, int, int, int, str]]:
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Chyba pri spustení docker: {e.stderr}", file=sys.stderr)
+        print(f"Error running docker: {e.stderr}", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print("Docker nie je nainštalovaný alebo nie je dostupný v PATH.", file=sys.stderr)
+        print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
     images = []
@@ -225,11 +225,11 @@ def get_images_with_sizes() -> list[tuple[str, int, int, int, str]]:
 
         if re.match(r"REPOSITORY", stripped, re.IGNORECASE):
             header_found = True
-            # Pozície stĺpcov z hlavičky — SIZE musí byť pred SHARED SIZE
+            # Column positions from the header — SIZE must come before SHARED SIZE
             col['shared'] = line.index('SHARED SIZE')
             col['unique'] = line.index('UNIQUE SIZE')
             col['containers'] = line.index('CONTAINERS')
-            col['size'] = line.index('SIZE')   # prvý výskyt = standalone SIZE
+            col['size'] = line.index('SIZE')   # first occurrence = standalone SIZE
             continue
 
         if stripped == "":
@@ -271,8 +271,8 @@ def get_images_with_sizes() -> list[tuple[str, int, int, int, str]]:
 
 def get_build_cache_summary() -> tuple[int, int, int]:
     """
-    Vráti (počet_záznamov, total_bytes, reclaimable_bytes) pre build cache.
-    Využíva 'docker system df'.
+    Returns (entry_count, total_bytes, reclaimable_bytes) for the build cache.
+    Uses 'docker system df'.
     """
     try:
         result = subprocess.run(
@@ -280,10 +280,10 @@ def get_build_cache_summary() -> tuple[int, int, int]:
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Chyba pri spustení docker: {e.stderr}", file=sys.stderr)
+        print(f"Error running docker: {e.stderr}", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
-        print("Docker nie je nainštalovaný alebo nie je dostupný v PATH.", file=sys.stderr)
+        print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
     for line in result.stdout.splitlines():
@@ -303,9 +303,9 @@ def get_build_cache_summary() -> tuple[int, int, int]:
 
 
 def print_section(title: str, rows: list, col_name: int, columns: list[tuple[str, int, str]]):
-    """Vypíše zarovnanú sekciu tabuľky so zadanými stĺpcami."""
-    # Zostav header
-    header_parts = [f"{'NÁZOV':<{col_name}}"]
+    """Prints an aligned table section with the given columns."""
+    # Build the header
+    header_parts = [f"{'NAME':<{col_name}}"]
     for col_label, col_width, col_align in columns:
         if col_align == ">":
             header_parts.append(f"{col_label:>{col_width}}")
@@ -335,7 +335,7 @@ def main():
     images = get_images_with_sizes()
 
     if not images:
-        print("\nNenašli sa žiadne Docker images.")
+        print("\nNo Docker images found.")
     else:
         images.sort(key=lambda x: x[1], reverse=True)
         col_name = max(max(len(img[0]) for img in images), 5)
@@ -345,25 +345,25 @@ def main():
             for name, unique, shared, virtual, containers in images
         ]
         print_section(
-            "Docker images zoradené podľa skutočnej veľkosti na disku:",
+            "Docker images sorted by actual size on disk:",
             rows, col_name,
-            [("UNIQUE", 12, ">"), ("SHARED", 12, ">"), ("VIRTUAL", 12, ">"), ("KONT.", 6, ">")],
+            [("UNIQUE", 12, ">"), ("SHARED", 12, ">"), ("VIRTUAL", 12, ">"), ("CONT.", 6, ">")],
         )
         total_unique = sum(img[1] for img in images)
         total_virtual = sum(img[3] for img in images)
         print(
-            f"{'CELKOM':<{col_name}}  {format_size(total_unique):>12}  {'':>12}  {format_size(total_virtual):>12}"
+            f"{'TOTAL':<{col_name}}  {format_size(total_unique):>12}  {'':>12}  {format_size(total_virtual):>12}"
         )
-        print(f"\nPočet images: {len(images)}")
-        print("  UNIQUE  = vrstvy unikátne pre daný image (skutočné miesto na disku)")
-        print("  SHARED  = vrstvy zdieľané s inými images (na disku uložené len raz)")
-        print("  VIRTUAL = celková veľkosť vrátane zdieľaných vrstiev\n")
+        print(f"\nNumber of images: {len(images)}")
+        print("  UNIQUE  = layers unique to a given image (actual disk space used)")
+        print("  SHARED  = layers shared with other images (stored on disk only once)")
+        print("  VIRTUAL = total size including shared layers\n")
 
-    # ── KONTAJNERY ──────────────────────────────────────────────────────────
+    # ── CONTAINERS ──────────────────────────────────────────────────────────
     containers = get_containers_with_sizes()
 
     if not containers:
-        print("\nNenašli sa žiadne Docker kontajnery.")
+        print("\nNo Docker containers found.")
     else:
         containers.sort(key=lambda x: x[1], reverse=True)
         col_name = max(max(len(c[0]) for c in containers), 5)
@@ -373,56 +373,56 @@ def main():
             for name, own, virt, status in containers
         ]
         print_section(
-            "Docker kontajnery zoradené podľa veľkosti:",
+            "Docker containers sorted by size:",
             rows, col_name,
-            [("VLASTNÁ", 12, ">"), ("VIRTUÁLNA", 12, ">"), ("STATUS", 10, "<")],
+            [("OWN", 12, ">"), ("VIRTUAL", 12, ">"), ("STATUS", 10, "<")],
         )
         total_own = sum(c[1] for c in containers)
         total_virt = sum(c[2] for c in containers)
         print(
-            f"{'CELKOM':<{col_name}}  {format_size(total_own):>12}  {format_size(total_virt):>12}"
+            f"{'TOTAL':<{col_name}}  {format_size(total_own):>12}  {format_size(total_virt):>12}"
         )
-        print(f"\nPočet kontajnerov: {len(containers)}")
-        print("  VLASTNÁ   = dáta zapísané kontajnerom nad base image")
-        print("  VIRTUÁLNA = vlastná + zdieľaný base image\n")
+        print(f"\nNumber of containers: {len(containers)}")
+        print("  OWN     = data written by the container on top of the base image")
+        print("  VIRTUAL = own + shared base image\n")
 
     # ── VOLUMES ──────────────────────────────────────────────────────────────
     volumes = get_volumes_with_sizes()
 
     if not volumes:
-        print("\nNenašli sa žiadne Docker volumes.")
+        print("\nNo Docker volumes found.")
     else:
         volumes.sort(key=lambda x: x[1], reverse=True)
         col_name = max(max(len(v[0]) for v in volumes), 11)
 
         rows = [(name, format_size(size), raw) for name, size, raw in volumes]
         print_section(
-            "Docker volumes zoradené podľa veľkosti:",
+            "Docker volumes sorted by size:",
             rows, col_name,
-            [("VEĽKOSŤ", 12, ">"), ("RAW", 15, ">")],
+            [("SIZE", 12, ">"), ("RAW", 15, ">")],
         )
         total = sum(v[1] for v in volumes)
-        print(f"{'CELKOM':<{col_name}}  {format_size(total):>12}")
-        print(f"\nPočet volumes: {len(volumes)}\n")
+        print(f"{'TOTAL':<{col_name}}  {format_size(total):>12}")
+        print(f"\nNumber of volumes: {len(volumes)}\n")
 
     # ── NETWORKS ─────────────────────────────────────────────────────────────
     bridge_networks, total_networks = get_networks_summary()
 
-    # Predvolený Docker limit: 16 sietí z 172.16.0.0/12 + 16 z 192.168.0.0/16 = 32
+    # Default Docker limit: 16 networks from 172.16.0.0/12 + 16 from 192.168.0.0/16 = 32
     BRIDGE_POOL_LIMIT = 32
     bridge_used = len(bridge_networks)
     bridge_free = BRIDGE_POOL_LIMIT - bridge_used
 
     sep = "-" * 100
     print(sep)
-    print(f"  Networks: celkom {total_networks}"
-          f"  |  bridge: {bridge_used} použité / {BRIDGE_POOL_LIMIT} dostupných"
-          f"  ({bridge_free} voľných)")
+    print(f"  Networks: total {total_networks}"
+          f"  |  bridge: {bridge_used} used / {BRIDGE_POOL_LIMIT} available"
+          f"  ({bridge_free} free)")
     if bridge_networks:
         col = max(len(n[0]) for n in bridge_networks)
         for name, _, subnet in sorted(bridge_networks, key=lambda x: x[2]):
             print(f"    {name:<{col}}  {subnet}")
-    print("  Vyčistiť nepoužívané:  docker network prune")
+    print("  Clean up unused:  docker network prune")
     print(sep)
     print()
 
@@ -432,9 +432,9 @@ def main():
         pct = int(reclaimable_bytes / total_bytes * 100) if total_bytes else 0
         print("-" * 100)
         print(f"  Build cache: {format_size(total_bytes)}"
-              f"  ({entries} záznamov,"
-              f"  uvoľniteľných: {format_size(reclaimable_bytes)} / {pct} %)")
-        print("  Vyčistiť:    docker builder prune")
+              f"  ({entries} entries,"
+              f"  reclaimable: {format_size(reclaimable_bytes)} / {pct} %)")
+        print("  Clean up:    docker builder prune")
         print("-" * 100)
     print()
 
