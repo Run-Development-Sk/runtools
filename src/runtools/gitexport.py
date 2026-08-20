@@ -246,6 +246,7 @@ def main():
         re.compile(r"^misc/"),
         re.compile(r"^docs/"),
         re.compile(r"^AGENTS\.md"),
+        re.compile(r"^CLAUDE\.md"),
         re.compile(r"^book\.json"),
         re.compile(r"^book\.readme"),
         re.compile(r"^default\.gitconfig"),
@@ -255,6 +256,8 @@ def main():
         re.compile(r"^package\.json"),
         re.compile(r"^tsconfig\.json"),
         re.compile(r"^readme\.md", re.IGNORECASE),
+        re.compile(r"^pyproject\.toml"),
+        re.compile(r"^pyrightconfig\.json"),
     ]
     alert_regexes = [
         (
