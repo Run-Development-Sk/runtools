@@ -283,7 +283,8 @@ def main():
 
     modified = filtered_modified
 
-    root = Path(__file__).resolve().parent
+    toplevel_output = run_command(["git", "rev-parse", "--show-toplevel"])
+    root = Path(toplevel_output[0]) if toplevel_output else Path.cwd()
 
     if modified:
         print()
