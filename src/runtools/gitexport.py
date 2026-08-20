@@ -51,9 +51,9 @@ def get_rev_id(rev=None):
     return output[0] if output else ""
 
 
-def is_ignored_file(file_path, ignored_regexes):
-    for ignored_regex in ignored_regexes:
-        if ignored_regex.search(file_path):
+def matches_any_regex(file_path, regexes):
+    for regex in regexes:
+        if regex.search(file_path):
             return True
     return False
 
@@ -100,6 +100,11 @@ def print_help():
     print(
         "Use option --export-ignored to export also these ignored files and *.js and *.less source files."
     )
+    print()
+    print(
+        f"{ATTENTION} There is the explicit whitelist of files which are ALWAYS exported (see gitexport.py > exported_regexes),"
+    )
+    print("even when they match the ignored files or the *.js and *.less source rule.")
     print()
     print(
         f"{ATTENTION} Be aware that revisions in your local repository can have different local order"
@@ -232,6 +237,10 @@ def main():
         + re.escape(ds)
     )
     updates_regex = re.compile(re.escape(f"{ds}updates{ds}"))
+    # takes precedence over ignored_regexes and the *.js/*.less source rule
+    exported_regexes = [
+        re.compile(r"^\.prodcontainer/"),
+    ]
     ignored_regexes = [
         re.compile(r"^\.[a-zA-Z]+/?"),
         re.compile(r"^misc/"),
@@ -259,17 +268,20 @@ def main():
     filtered_modified = []
     for file_path in modified:
         extension = Path(file_path).suffix.lstrip(".").lower()
+        is_exported = matches_any_regex(file_path, exported_regexes)
         is_source_file = (
-            "export-sources" not in options
+            not is_exported
+            and "export-sources" not in options
             and "export-ignored" not in options
             and not vendors_regex.search(file_path)
             and sources_regex.search(file_path)
             and extension in ("less", "js")
         )
         is_ignored = (
-            "export-ignored" not in options
+            not is_exported
+            and "export-ignored" not in options
             and not vendors_regex.search(file_path)
-            and is_ignored_file(file_path, ignored_regexes)
+            and matches_any_regex(file_path, ignored_regexes)
         )
 
         if is_source_file or is_ignored:
