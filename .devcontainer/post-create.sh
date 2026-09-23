@@ -24,5 +24,5 @@ if command -v git >/dev/null 2>&1; then
     pre-commit install
 fi
 
-# install AI agents
-bash "$(dirname "${BASH_SOURCE[0]}")/post-create-agents.sh"
+# AI agents: install
+bash "$(dirname "${BASH_SOURCE[0]}")/post-create-ai-agents.sh"

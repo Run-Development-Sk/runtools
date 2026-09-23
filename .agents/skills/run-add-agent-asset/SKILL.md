@@ -32,25 +32,34 @@ If it is not a new type of artifact, **new symlinks are not needed** – existin
 - kebab-case for the part of the name after the prefix (e.g., `run.deploy-staging`, `run-review-pr`),
 - avoid double-prefixing (`run.run.<name>`, `run-run-<name>`) – if a requested name already carries a `run.` or `run-` prefix, strip that prefix first and then apply the correct prefix for the artifact type (`run.` for command/rule/subagent files, `run-` for skill directories),
 - content and `description` **in English**,
-- keep `description` brief and clear – the agent decides on activation based on it during `agent_requested` / `model_decision`.
+- **plain file paths** – write paths as plain code spans (`docs/ai-agents.md`, `.agents/rules/run.<name>.md`), never as Markdown links (`[...](...)`) – the link target duplicates the path and does not help an AI agent,
+- **context economy** – size an artifact by when it is loaded, not by how much there is to say:
+  - **always in context** (every session, every agent): rule bodies, `AGENTS.md`, and the `description` of every skill, command, and subagent – keep these minimal and free of motivational prose or content restated elsewhere (e.g. do not repeat the `description` in the body),
+  - skill/subagent `description` drives activation (`agent_requested` / `model_decision`) and delegation – 2–4 lines: what it does + trigger phrases; procedure details belong in the body, which loads only on activation,
+  - command `description` is not used for model activation (commands are user-invoked) – one line in the form "Entry point to the `run-<name>` skill – <what it does>",
+  - bodies of skills, commands, and subagents load only on use – completeness there costs nothing per session.
 
 ## 3. Cookbook by type
 
 ### Rule (`.agents/rules/run.<name>.md`)
+
 - Combined frontmatter: `description` + `type:` (Auggie: `always_apply|agent_requested`, `manual` is skipped by CLI – only works in IDE extensions) + `trigger:` (Antigravity: `always_on|glob|model_decision|manual`). Unknown keys are ignored by each agent.
-- Claude Code and Codex do not have a rules folder -> if the `always_apply|always_on` rule should apply to them as well, add a `@.agents/rules/run.<name>.md` import to `AGENTS.md`.
+- Codex has no rules folder, and Claude Code's native `.claude/rules/` is not wired into this setup -> if the `always_apply|always_on` rule should apply to them as well, add a `@.agents/rules/run.<name>.md` import to `AGENTS.md`.
 
 ### Skill (`.agents/skills/run-<name>/SKILL.md`)
+
 - Directory + `SKILL.md` with **mandatory** frontmatter `name` (= `run-<name>`) and `description`.
 - Optional subdirectories `scripts/`, `references/`, `assets/`.
 - No registration is needed elsewhere – agents auto-discover skills.
 
 ### Command (`.agents/commands/run.<name>.md`)
+
 - File `run.<name>.md` -> `/run.<name>`; an additional subdirectory adds a further namespace (`frontend/run.component.md` -> `/frontend:run.component`).
 - Frontmatter with a `description` field (folded scalar, e.g., `description: >-`).
 - **Codex** does not support slash commands – use the corresponding skill directly there; the command should be a thin entry point referencing the skill.
 
 ### Subagent (`.agents/agents/`)
+
 - Add **both** formats for the same agent, sharing the `run.<name>` base name:
   - `run.<name>.md` (Claude Code, Auggie): YAML frontmatter `name`, `description`, optionally `color` (Auggie), `tools`, `model` (Claude); body = system prompt,
   - `run.<name>.toml` (Codex): `name`, `description`, `developer_instructions` (system prompt), optionally `model`, `sandbox_mode`.
@@ -66,9 +75,9 @@ If it is not a new type of artifact, **new symlinks are not needed** – existin
 
 After creation, verify that the artifact is visible to each relevant agent:
 
-- **Auggie** – skills natively from `.agents/skills`; commands/agents/rules via `.augment/*` symlinks,
-- **Claude Code** – via `.claude/*` symlinks; rules only via `@`-import in `AGENTS.md`,
-- **Antigravity** – `.agents/*` natively; commands via symlink `workflows -> commands`; does not read subagents from files,
+- **Auggie** – skills and subagents natively from `.agents/skills` / `.agents/agents`; commands via the `.claude/commands` compatibility fallback; rules via the materialized `.augment/rules` directory (temporary workaround in `docs/ai-agents.md` – reopen the devcontainer after editing rules),
+- **Claude Code** – commands/skills/subagents via `.claude/*` symlinks; rules only via `@`-import in `AGENTS.md`,
+- **Antigravity** – rules and skills natively from `.agents/*`; does not support commands in the CLI; does not read subagents from files,
 - **Codex** – `.agents/skills` and `AGENTS.md` natively; subagents from `.codex/agents` (`.toml`) via symlink; does not support commands; rules only by reference from `AGENTS.md`.
 
 ## Related

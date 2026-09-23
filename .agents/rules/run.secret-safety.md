@@ -9,8 +9,6 @@ trigger: always_on
 
 # Rule: safe handling of secrets
 
-Applies to all agents and all skills in this workspace.
-
 ## What is a secret
 
 - API keys, tokens (OAuth/bearer), cookies, passwords, private keys, signing

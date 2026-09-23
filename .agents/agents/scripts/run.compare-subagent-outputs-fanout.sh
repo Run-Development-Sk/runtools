@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fan-out orchestrator for the run.compare-solutions subagent.
+# Fan-out orchestrator for the run.compare-subagent-outputs subagent.
 # Runs multiple CLI agents (claude/auggie/codex/agy) headless on the same
 # prompt, saves outputs to tmp/ (leaves them for inspection). auggie runs
 # read-only (--ask); claude additionally has WebFetch/WebSearch/Bash, and codex runs without
@@ -16,20 +16,20 @@
 set -uo pipefail
 
 # --- recursion guard: orchestrator must never run itself ---
-if [[ "${RUN_COMPARE_SOLUTIONS_ACTIVE:-}" == "1" ]]; then
-  echo "run.compare-solutions: recursive execution is forbidden (RUN_COMPARE_SOLUTIONS_ACTIVE=1)." >&2
+if [[ "${RUN_COMPARE_SUBAGENT_OUTPUTS_ACTIVE:-}" == "1" ]]; then
+  echo "run.compare-subagent-outputs: recursive execution is forbidden (RUN_COMPARE_SUBAGENT_OUTPUTS_ACTIVE=1)." >&2
   exit 3
 fi
-export RUN_COMPARE_SOLUTIONS_ACTIVE=1
+export RUN_COMPARE_SUBAGENT_OUTPUTS_ACTIVE=1
 
 usage() {
   cat >&2 <<'EOF'
 Usage:
-  run.compare-solutions-fanout.sh --prompt-file <file> [--out-dir <dir>] [agent[:model] ...]
-  run.compare-solutions-fanout.sh --check [agent[:model] ...]
+  run.compare-subagent-outputs-fanout.sh --prompt-file <file> [--out-dir <dir>] [agent[:model] ...]
+  run.compare-subagent-outputs-fanout.sh --check [agent[:model] ...]
 
   --prompt-file   mandatory (except --check); file with the task for subagents
-  --out-dir       optional; default tmp/run.compare-solutions/<timestamp>
+  --out-dir       optional; default tmp/run.compare-subagent-outputs/<timestamp>
   --check         self-test: verify auth + flag validity with a cheap prompt (no fan-out)
   agent[:model]   optional; default "claude auggie" (models based on CLI configuration)
                   supported agents: claude, auggie, codex, agy
@@ -52,20 +52,20 @@ if [[ "$CHECK_MODE" == "1" ]]; then
   # self-test: cheap prompt (ignores --prompt-file), only verification of auth + flags
   CHECK_TMP_PROMPT="$(mktemp)"; printf 'Respond with exactly one word: OK\n' > "$CHECK_TMP_PROMPT"
   PROMPT_FILE="$CHECK_TMP_PROMPT"
-  [[ -z "$OUT_DIR" ]] && OUT_DIR="tmp/run.compare-solutions/check-$(date +%Y%m%d-%H%M%S)"
+  [[ -z "$OUT_DIR" ]] && OUT_DIR="tmp/run.compare-subagent-outputs/check-$(date +%Y%m%d-%H%M%S)"
 else
   [[ -z "$PROMPT_FILE" || ! -f "$PROMPT_FILE" ]] && { echo "Missing valid --prompt-file." >&2; usage; exit 2; }
-  [[ -z "$OUT_DIR" ]] && OUT_DIR="tmp/run.compare-solutions/$(date +%Y%m%d-%H%M%S)"
+  [[ -z "$OUT_DIR" ]] && OUT_DIR="tmp/run.compare-subagent-outputs/$(date +%Y%m%d-%H%M%S)"
 fi
 [[ ${#SPECS[@]} -eq 0 ]] && SPECS=(claude auggie)
 mkdir -p "$OUT_DIR"
 # we COPY the input prompt to out-dir → there is always a copy of the task
 # in <timestamp>/prompt.md and the source file is not deleted by default (non-destructive cp).
 # Exception – throwaway prompt prepared by the orchestrator
-# (tmp/run.compare-solutions/prompt.md): we delete this after copying (net effect = mv)
-# so that nothing is left at the top level of tmp/run.compare-solutions/.
+# (tmp/run.compare-subagent-outputs/prompt.md): we delete this after copying (net effect = mv)
+# so that nothing is left at the top level of tmp/run.compare-subagent-outputs/.
 # Safety guard: if PROMPT_FILE IS already the target (e.g., via --out-dir), skip copying.
-THROWAWAY_PROMPT="tmp/run.compare-solutions/prompt.md"
+THROWAWAY_PROMPT="tmp/run.compare-subagent-outputs/prompt.md"
 if [[ "$(readlink -f "$PROMPT_FILE")" != "$(readlink -f "$OUT_DIR/prompt.md")" ]]; then
   cp "$PROMPT_FILE" "$OUT_DIR/prompt.md"
   # only delete throwaway source; custom --prompt-file on a different path remains untouched
@@ -96,7 +96,7 @@ run_agent() {
       # --permission-mode plan is NOT USED: in plan mode, the final message is only a stub
       # ("analysis delivered above") and the entire content is discarded.
       # NOTE: these --tools are tools of the EXECUTED claude subagent –
-      # they are unrelated to `tools:` in the orchestrator's frontmatter (run.compare-solutions.md).
+      # they are unrelated to `tools:` in the orchestrator's frontmatter (run.compare-subagent-outputs.md).
       local ctools="Read,Grep,Glob,WebFetch,WebSearch,Bash"
       local a=(--permission-mode default --tools "$ctools" --allowedTools "$ctools")
       [[ -n "$model" ]] && a+=(--model "$model")
@@ -187,7 +187,7 @@ run_agent() {
 
 # --- self-test mode (--check): verify auth + flag validity, no costly fan-out ---
 if [[ "$CHECK_MODE" == "1" ]]; then
-  echo "run.compare-solutions --check: verifying ${#SPECS[@]} agents with a cheap prompt → $OUT_DIR" >&2
+  echo "run.compare-subagent-outputs --check: verifying ${#SPECS[@]} agents with a cheap prompt → $OUT_DIR" >&2
   mkdir -p "$OUT_DIR/.meta"
   cpids=(); clabels=()
   for spec in "${SPECS[@]}"; do
@@ -218,7 +218,7 @@ if [[ "$CHECK_MODE" == "1" ]]; then
   exit $crc
 fi
 
-echo "run.compare-solutions: running ${#SPECS[@]} subagents, output → $OUT_DIR" >&2
+echo "run.compare-subagent-outputs: running ${#SPECS[@]} subagents, output → $OUT_DIR" >&2
 mkdir -p "$OUT_DIR/.meta"
 PIDS=(); LABELS=()
 for spec in "${SPECS[@]}"; do

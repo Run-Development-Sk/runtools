@@ -1,7 +1,7 @@
 ---
 description: >-
-  Add a new agent artifact (skill, rule, slash command, or subagent)
-  in accordance with the unified configuration of AI agents (docs/ai-agents.md).
+  Entry point to the run-add-agent-asset skill – add a new agent artifact
+  (skill, rule, slash command, or subagent) per docs/ai-agents.md.
 ---
 
 # /run.add-agent-asset – Add agent artifact
