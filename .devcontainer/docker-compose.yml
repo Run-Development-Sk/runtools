@@ -17,8 +17,9 @@ services:
       - TZ=${TZ:-Europe/Bratislava}
     volumes:
       # Mount workspaces folder (`:cached` improves the performance on Mac and Windows)
-      - ../..:/home/ubuntu/workspaces:cached
+      - ..:/home/ubuntu/workspaces:cached
       # Mount other shared local folders if needed
+      #- ../../my-project:/home/ubuntu/workspaces/_shared/my-project:cached
       #- $HOME/Documents:/home/ubuntu/workspaces/_shared/Documents:cached
       # Mount local user:
       # - .hgrc and .gitconfig files to ensure the same user for Mercurial and Git.
@@ -40,6 +41,15 @@ services:
       - app-ubuntu-codex:/home/ubuntu/.codex
       # Store Auggie config/login/settings
       - app-ubuntu-augment:/home/ubuntu/.augment
+    extra_hosts:
+      # Map `host.docker.internal` to the host machine so that it is accesible
+      # from inside docker container like http://host.docker.internal
+      # ATTENTION: Do not use `localhost:host-gateway` as `localhost` is already
+      # used internally in docker container.
+      - host.docker.internal:host-gateway
+      # Map `my-local-domain` to the host machine so that it is accesible
+      # from inside docker container like http://my-local-domain
+      #- my-local-domain:host-gateway
 
 volumes:
   app-ubuntu-preserved:

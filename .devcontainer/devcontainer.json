@@ -2,10 +2,11 @@
   "name": "${localWorkspaceFolderBasename}",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
-  "workspaceFolder": "/home/ubuntu/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/home/ubuntu/workspaces",
   "postStartCommand": "bash ./.devcontainer/post-start.sh",
   "postCreateCommand": "bash ./.devcontainer/post-create.sh",
   "containerEnv": {
+    "DOCKER_WORKDIR_LOCAL": "${localWorkspaceFolder}",
     "DOCKER_WORKDIR_LOCAL_BASENAME": "${localWorkspaceFolderBasename}"
   },
   "forwardPorts": [5678],
@@ -34,7 +35,7 @@
       ],
       "settings": {
         // general settings
-        "window.title": "${dirty}${rootName}${separator}${activeEditorShort}${separator}${profileName}${separator}${appName}",
+        "window.title": "${dirty}${localWorkspaceFolderBasename}${separator}${activeEditorShort}${separator}${profileName}${separator}${appName}",
         "workbench.editor.openPositioning": "last",
         "editor.renderWhitespace": "all",
         "editor.renderControlCharacters": true,

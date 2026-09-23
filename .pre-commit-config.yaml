@@ -1,9 +1,68 @@
+# Pre-commit hooks — automatic lint and formatting on every commit.
+#
+# Installation (once after clone; if using a devcontainer, it installs automatically - see devcontainer.json > "postCreateCommand"):
+#   pip install pre-commit
+#   pre-commit install
+#
+# Manual run for staged files:
+#   pre-commit run
+#
+# Manual run for staged files, only the hook with a given id or alias:
+#   pre-commit run prettier
+#
+# Manual run for specified files:
+#   pre-commit run --files foo.xml bar.py
+#
+# Manual run for all modified (staged + unstaged) files:
+#   pre-commit run --files $(git diff HEAD --name-only)
+#
+# Manual run for all files:
+#   pre-commit run --all-files
+#
+# Emergency bypass of hooks during commit (not recommended for regular use):
+#   git commit --no-verify
+#
+# Manual update of hooks to the latest versions:
+#   pre-commit autoupdate
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.md$'
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
+        # devcontainer.json and .vscode/*.json are JSONC (JSON with Comments) — comments are valid
+        # there, but the stdlib JSON parser standard-json uses rejects them.
+        exclude: '\.devcontainer/devcontainer\.json$|\.vscode/'
       - id: check-merge-conflict
       - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: '\.bat$|\.cmd$'
+
+  # Prettier (local) — formats markdown docs and config files; pre-commit downloads
+  # its own Node runtime, so no system Node install is required.
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier markdown docs
+        alias: prettier-markdown-docs
+        entry: prettier
+        args: [--write, --list-different, --ignore-unknown]
+        language: node
+        additional_dependencies: &prettier_deps
+          - "prettier@3.1.0"
+        files: \.md$
+      - id: prettier
+        name: prettier json/yaml
+        entry: prettier
+        args: [--write, --list-different, --ignore-unknown]
+        language: node
+        additional_dependencies: *prettier_deps
+        # JSONC files need no exclude here: prettier parses and re-emits comments
+        # natively. Only check-json above has to skip them.
+        files: ^(\.devcontainer|\.vscode|\.github|docs)/.*\.(json|ya?ml)$|^[^/]+\.(json|ya?ml)$

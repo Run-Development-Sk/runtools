@@ -9,6 +9,7 @@
 Project DB.session.sql
 /tmp/*
 !/tmp/.gitkeep
+/_shared/
 /export/
 *.log
 
