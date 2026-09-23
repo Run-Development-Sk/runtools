@@ -51,7 +51,7 @@ pip install -r requirements.txt --break-system-packages
 
 ### Manually (as a fallback)
 
-If installation is not possible, it's entirely sufficient to download the required script from the folder [https://github.com/RunDevelopmentSk/runtools  > `/src/runtools/`](https://github.com/RunDevelopmentSk/runtools/tree/main/src/runtools) and run it like any other Python script, e.g.:
+If installation is not possible, it's entirely sufficient to download the required script from the folder [https://github.com/RunDevelopmentSk/runtools > `/src/runtools/`](https://github.com/RunDevelopmentSk/runtools/tree/main/src/runtools) and run it like any other Python script, e.g.:
 
 ```
 python3 dockerinfo.py

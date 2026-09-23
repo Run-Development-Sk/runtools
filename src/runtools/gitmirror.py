@@ -191,13 +191,13 @@ def main() -> None:
         # --- Step 3: Local clone of mirror-repo with a reference to source ---
         print("\n=== Step 3: Creating a local clone of mirror-repo ===")
         run(["git", "clone", mirror_repo, local_name], env=ssh_env)
-        run(["git", "remote", "add", "source", source_repo], cwd=local_name, env=ssh_env)
-        # Disable push to source
-        # run(["git", "remote", "set-url", "--push", "source", "DISABLED"], cwd=local_name, env=ssh_env)
+        run(["git", "remote", "add", "upstream", source_repo], cwd=local_name, env=ssh_env)
+        # Disable push to upstream
+        run(["git", "remote", "set-url", "--push", "upstream", "DISABLED"], cwd=local_name)
 
         print(f"\nDone! Mirror repo cloned to ./{local_name}/")
         print(f"  origin -> {mirror_repo}  (fetch + push)")
-        print(f"  source -> {source_repo}  (fetch only, push DISABLED)")
+        print(f"  upstream -> {source_repo}  (fetch only, push DISABLED)")
 
     finally:
         os.unlink(askpass_path)
