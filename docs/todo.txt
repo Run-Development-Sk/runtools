@@ -3,7 +3,7 @@ x translate to English
 - gitmirror:
     x namiesto `[remote "source"]` nech je `[remote "upstream"]` (takto je to zaužívané, upstream = core, source)
     - dokonči refaktoring ktorý som robil niekedy v júni 2026 (?) - porovnaj gitmiror.py tu a v /home/mojo/Projects/ai-tasks/
-    - pridaj možnosť --force a vtedy sa bude dať urobiť mirror aj do repa ktoré neobsahuje v názve "test"
+    x pridaj možnosť --force a vtedy sa bude dať urobiť mirror aj do repa ktoré neobsahuje v názve "test"
 - dockerinfo: počíta sa veľkosť images správne? Sputenie `docker image prune --all` na koniec vypísalo `Total reclaimed space: 3.797GB` no dockerinfo písalo: `CELKOM 37.97 GB 80.80 GB` - 10x viac...
     - rovnako treba preveriť aj ostatné (kontaineri a volumes) veľkosti
 - enforce naming conventions (run., run-) for agents, skills, rules and commands

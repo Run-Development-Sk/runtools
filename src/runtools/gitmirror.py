@@ -3,7 +3,10 @@
 gitmirror.py - Mirror a git repository to another repository.
 
 Usage:
-    python gitmirror.py <source-repo> <mirror-repo>
+    python gitmirror.py <source-repo> <mirror-repo> [--force]
+
+Options:
+    --force  Skip the safety check requiring 'test' in the mirror-repo name.
 
 Example:
     python gitmirror.py RunDevelopmentSk/drinkcentrum-is.git RunDevelopmentSk/test.git
@@ -84,9 +87,22 @@ def validate_mirror_repo(repo_url: str) -> None:
         print(
             f"Error: mirror-repo '{name}' does not contain 'test' as a standalone word.\n"
             "This safety check prevents overwriting a production repository.\n"
-            "Examples of valid names: test, test-01, test-repo, my-test, my-test-v2"
+            "Examples of valid names: test, test-01, test-repo, my-test, my-test-v2\n"
+            "Use --force to skip this check."
         )
         sys.exit(1)
+
+
+def confirm_force(name: str) -> bool:
+    """Asks the user to type the mirror-repo name to confirm overwriting it."""
+    try:
+        response = input(
+            f"All history of mirror-repo '{name}' will be irreversibly overwritten.\n"
+            "Type the mirror-repo name to confirm: "
+        )
+    except EOFError:
+        return False
+    return response.strip() == name
 
 
 def ask_ssh_passphrase() -> str:
@@ -115,16 +131,32 @@ def create_ssh_env(passphrase: str) -> tuple[dict, str]:
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
-        print(f"Usage: python {sys.argv[0]} <source-repo> <mirror-repo>")
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    options = [arg for arg in sys.argv[1:] if arg.startswith("--")]
+    unknown_options = [opt for opt in options if opt != "--force"]
+    if len(args) != 2 or unknown_options:
+        print(f"Usage: python {sys.argv[0]} <source-repo> <mirror-repo> [--force]")
         print(f"Example:  python {sys.argv[0]} RunDevelopmentSk/drinkcentrum-is RunDevelopmentSk/test")
+        print("  --force  skip the safety check requiring 'test' in the mirror-repo name")
         sys.exit(1)
+    force = "--force" in options
 
-    source_repo = normalize_repo(sys.argv[1])
-    mirror_repo = normalize_repo(sys.argv[2])
+    source_repo = normalize_repo(args[0])
+    mirror_repo = normalize_repo(args[1])
     local_name = get_local_name(mirror_repo)
 
-    validate_mirror_repo(mirror_repo)
+    # GitHub repository names are case-insensitive
+    if source_repo.lower() == mirror_repo.lower():
+        print("Error: source-repo and mirror-repo are the same repository.")
+        sys.exit(1)
+
+    if force:
+        print("Warning: --force used, skipping the 'test' name safety check for mirror-repo.")
+        if not confirm_force(local_name):
+            print("Aborted.")
+            sys.exit(0)
+    else:
+        validate_mirror_repo(mirror_repo)
 
     # Tmp folders with a __ prefix/suffix to avoid collisions
     tmp_init = f"__{local_name}_init__"
