@@ -173,19 +173,10 @@ def main():
     removed = sorted(removed_map.keys())
 
     ds = os.sep
-    vendors_regex = re.compile(re.escape(f"{ds}vendors{ds}"))
-    sources_regex = re.compile(
-        re.escape(ds)
-        + r"(?:css|js)(?:"
-        + re.escape(f"{ds}libs")
-        + r")?(?:"
-        + re.escape(f"{ds}less")
-        + r"|"
-        + re.escape(f"{ds}sources")
-        + r")"
-        + re.escape(ds)
-    )
-    updates_regex = re.compile(re.escape(f"{ds}updates{ds}"))
+    # git outputs paths relative to the repository root with "/" on every platform
+    vendors_regex = re.compile(r"(?:^|/)vendors/")
+    sources_regex = re.compile(r"(?:^|/)(?:css|js)(?:/libs)?/(?:less|sources)/")
+    updates_regex = re.compile(r"(?:^|/)updates/")
     # takes precedence over ignored_regexes and the *.js/*.less source rule
     exported_regexes = [
         re.compile(r"^\.prodcontainer/"),
@@ -269,7 +260,7 @@ def main():
                 print(f"{ATTENTION}  {file_path} is not a file!")
                 continue
 
-            target_path = export_dir / file_path.lstrip(ds)
+            target_path = export_dir / file_path.lstrip("/")
             target_path.parent.mkdir(parents=True, exist_ok=True)
             try:
                 shutil.copy2(source_path, target_path)
