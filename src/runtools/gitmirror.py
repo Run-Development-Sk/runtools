@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-"""
-gitmirror.py - Mirror a git repository to another repository.
+"""Mirror a git repository to another repository."""
 
-Usage:
-    python gitmirror.py <source-repo> <mirror-repo> [--force]
-
-Options:
-    --force  Skip the safety check requiring 'test' in the mirror-repo name.
-
-Example:
-    python gitmirror.py RunDevelopmentSk/drinkcentrum-is.git RunDevelopmentSk/test.git
-"""
-
+import argparse
 import getpass
 import os
 import re
@@ -130,19 +120,31 @@ def create_ssh_env(passphrase: str) -> tuple[dict, str]:
     return env, askpass_path
 
 
-def main() -> None:
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
-    options = [arg for arg in sys.argv[1:] if arg.startswith("--")]
-    unknown_options = [opt for opt in options if opt != "--force"]
-    if len(args) != 2 or unknown_options:
-        print(f"Usage: python {sys.argv[0]} <source-repo> <mirror-repo> [--force]")
-        print(f"Example:  python {sys.argv[0]} RunDevelopmentSk/drinkcentrum-is RunDevelopmentSk/test")
-        print("  --force  skip the safety check requiring 'test' in the mirror-repo name")
-        sys.exit(1)
-    force = "--force" in options
+def parse_args() -> argparse.Namespace:
+    epilog = """\
+Example:
+    %(prog)s RunDevelopmentSk/drinkcentrum-is.git RunDevelopmentSk/test.git"""
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("source_repo", metavar="source-repo", help="source repository (owner/name)")
+    parser.add_argument("mirror_repo", metavar="mirror-repo", help="mirror repository (owner/name)")
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="skip the safety check requiring 'test' in the mirror-repo name",
+    )
+    return parser.parse_args()
 
-    source_repo = normalize_repo(args[0])
-    mirror_repo = normalize_repo(args[1])
+
+def main() -> None:
+    args = parse_args()
+
+    source_repo = normalize_repo(args.source_repo)
+    mirror_repo = normalize_repo(args.mirror_repo)
     local_name = get_local_name(mirror_repo)
 
     # GitHub repository names are case-insensitive
@@ -150,7 +152,7 @@ def main() -> None:
         print("Error: source-repo and mirror-repo are the same repository.")
         sys.exit(1)
 
-    if force:
+    if args.force:
         print("Warning: --force used, skipping the 'test' name safety check for mirror-repo.")
         if not confirm_force(local_name):
             print("Aborted.")

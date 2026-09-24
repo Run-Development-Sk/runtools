@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import re
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -12,23 +12,6 @@ ALERTS_LABEL = "\033[01;37mALERTS:\033[00m"
 EXPORTED_LABEL = "\033[01;37mExported files\033[00m"
 REMOVED_LABEL = "\033[01;37mRemoved files:\033[00m"
 UPDATES_LABEL = "\033[01;37mUpdate files:\033[00m"
-
-
-def split_args_and_options(argv):
-    args = []
-    options = {}
-
-    for arg in argv:
-        if re.match(r"^-{1,2}[a-z0-9]", arg, re.IGNORECASE):
-            option_name = arg.lstrip("-")
-            option_value = True
-            if "=" in option_name:
-                option_name, option_value = option_name.split("=", 1)
-            options[option_name] = option_value
-        else:
-            args.append(arg)
-
-    return args, options
 
 
 def run_command(command):
@@ -66,110 +49,76 @@ def get_file_alerts(file_path, alert_regexes):
     return file_alerts
 
 
-def print_help():
-    print("python3 gitexport.py START_REV END_REV EXPORT_DIR [--export-sources]")
-    print()
-    print(
-        f"{ATTENTION} Files are exported as they are in the actual state of the repository (committed or uncommitted)."
+def commit_hash(value):
+    if not re.fullmatch(r"[a-f0-9]{40}", value, re.IGNORECASE):
+        raise argparse.ArgumentTypeError("must be a valid Git commit hash")
+    return value
+
+
+def parse_args():
+    description = f"""\
+Export files changed between two revisions of a Git repository.
+
+{ATTENTION} Files are exported as they are in the actual state of the repository (committed or uncommitted).
+Provided start/end revisions are used just to find modifications in the project which happened between them.
+They do not change the actual revision of the project.
+To export files in versions from a specific revision or branch, update the project accordingly by git checkout.
+In most cases, you will export the last version of files (you are working on) for FTP update.
+
+{ATTENTION} By default *.js and *.less (placed in directories .../js/sources/*.js,
+.../js/libs/sources/*.js, .../css/less/*.less and .../css/libs/less/*.less) are NOT exported.
+Use option --export-sources to export also *.js and *.less source files.
+
+{ATTENTION} There is the explicit list of ignored files which are NOT exported (see gitexport.py > ignored_regexes).
+Then *.js and *.less source files are NOT exported too (see the previous paragraph).
+Use option --export-ignored to export also these ignored files and *.js and *.less source files.
+
+{ATTENTION} There is the explicit whitelist of files which are ALWAYS exported (see gitexport.py > exported_regexes),
+even when they match the ignored files or the *.js and *.less source rule.
+
+{ATTENTION} Be aware that revisions in your local repository can have different local order
+than they have in repositories of your colleagues."""
+    epilog = """\
+Examples:
+%(prog)s 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export
+    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export.
+    The *.js and *.less sources are NOT exported.
+
+%(prog)s 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export --export-sources
+    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export.
+    The *.js and *.less sources are exported too.
+
+%(prog)s 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export --export-ignored
+    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export.
+    The ignored files and *.js and *.less sources are exported too."""
+    parser = argparse.ArgumentParser(
+        description=description,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    print(
-        "Provided start/end revisions are used just to find modifications in the project which happened between them."
+    parser.add_argument("start_rev", metavar="START_REV", type=commit_hash, help="start revision (full commit hash)")
+    parser.add_argument("end_rev", metavar="END_REV", type=commit_hash, help="end revision (full commit hash)")
+    parser.add_argument("export_dir", metavar="EXPORT_DIR", type=Path, help="existing writable export directory")
+    parser.add_argument("--export-sources", action="store_true", help="export also *.js and *.less source files")
+    parser.add_argument(
+        "--export-ignored",
+        action="store_true",
+        help="export also ignored files and *.js and *.less source files",
     )
-    print("They do not change the actual revision of the project.")
-    print(
-        "To export files in versions from a specific revision or branch, update the project accordingly by git checkout."
-    )
-    print(
-        "In most cases, you will export the last version of files (you are working on) for FTP update."
-    )
-    print()
-    print(
-        f"{ATTENTION} By default *.js and *.less (placed in directories .../js/sources/*.js,"
-    )
-    print(
-        ".../js/libs/sources/*.js, .../css/less/*.less and .../css/libs/less/*.less) are NOT exported."
-    )
-    print("Use option --export-sources to export also *.js and *.less source files.")
-    print()
-    print(
-        f"{ATTENTION} There is the explicit list of ignored files which are NOT exported (see gitexport.py > ignored_regexes)."
-    )
-    print(
-        "Then *.js and *.less source files are NOT exported too (see the previous paragraph)."
-    )
-    print(
-        "Use option --export-ignored to export also these ignored files and *.js and *.less source files."
-    )
-    print()
-    print(
-        f"{ATTENTION} There is the explicit whitelist of files which are ALWAYS exported (see gitexport.py > exported_regexes),"
-    )
-    print("even when they match the ignored files or the *.js and *.less source rule.")
-    print()
-    print(
-        f"{ATTENTION} Be aware that revisions in your local repository can have different local order"
-    )
-    print("than they have in repositories of your colleagues.")
-    print()
-    print("Usage:")
-    print(
-        "python3 gitexport.py 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export"
-    )
-    print(
-        "    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export."
-    )
-    print("    The *.js and *.less sources are NOT exported.")
-    print()
-    print(
-        "python3 gitexport.py 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export --export-sources"
-    )
-    print(
-        "    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export."
-    )
-    print("    The *.js and *.less sources are exported too.")
-    print()
-    print(
-        "python3 gitexport.py 9864038c3eb54387fd205d2b541ada89827ba2ef 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 /tmp/export --export-ignored"
-    )
-    print(
-        "    Exports all files changed from rev 9864038c3eb54387fd205d2b541ada89827ba2ef to 2b8f5a6fcf6c41bfbf3d63f7a5e0b7cabe75e764 (inclusive) into directory /tmp/export."
-    )
-    print("    The ignored files and *.js and *.less sources are exported too.")
+    return parser.parse_args()
 
 
 def main():
-    args, options = split_args_and_options(sys.argv)
+    args = parse_args()
+    rev1 = args.start_rev
+    rev2 = args.end_rev
+    export_dir = args.export_dir
 
     curr_rev = get_rev_id().strip()
     status_output = run_command(["git", "status", "--porcelain"])
     if status_output:
         curr_rev += " \033[01;37mwith uncommitted changes\033[00m"
 
-    if "h" in options or "help" in options:
-        print_help()
-        return 0
-
-    if len(args) < 2:
-        print("Missing start revision")
-        return 1
-    rev1 = args[1]
-    if not re.fullmatch(r"[a-f0-9]{40}", rev1, re.IGNORECASE):
-        print("Start revision must be a valid Git commit hash")
-        return 1
-
-    if len(args) < 3:
-        print("Missing end revision")
-        return 1
-    rev2 = args[2]
-    if not re.fullmatch(r"[a-f0-9]{40}", rev2, re.IGNORECASE):
-        print("End revision must be a valid Git commit hash")
-        return 1
-
-    if len(args) < 4:
-        print("Missing export dir")
-        return 1
-
-    export_dir = Path(args[3])
     if not export_dir.exists() or not os.access(export_dir, os.W_OK):
         print(f"Directory {export_dir} does not exist or it is not writable")
         return 1
@@ -274,15 +223,15 @@ def main():
         is_exported = matches_any_regex(file_path, exported_regexes)
         is_source_file = (
             not is_exported
-            and "export-sources" not in options
-            and "export-ignored" not in options
+            and not args.export_sources
+            and not args.export_ignored
             and not vendors_regex.search(file_path)
             and sources_regex.search(file_path)
             and extension in ("less", "js")
         )
         is_ignored = (
             not is_exported
-            and "export-ignored" not in options
+            and not args.export_ignored
             and not vendors_regex.search(file_path)
             and matches_any_regex(file_path, ignored_regexes)
         )

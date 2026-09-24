@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Shows an overview of Docker images, containers, volumes and build cache sorted by size."""
 
+import argparse
 import subprocess
 import re
 import sys
@@ -331,6 +332,8 @@ def print_section(title: str, rows: list, col_name: int, columns: list[tuple[str
 
 
 def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
+
     # ── IMAGES ───────────────────────────────────────────────────────────────
     images = get_images_with_sizes()
 
