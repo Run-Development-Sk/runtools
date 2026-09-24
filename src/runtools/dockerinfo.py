@@ -2,6 +2,7 @@
 """Shows an overview of Docker images, containers, volumes and build cache sorted by size."""
 
 import argparse
+import json
 import subprocess
 import re
 import sys
@@ -270,14 +271,14 @@ def get_images_with_sizes() -> list[tuple[str, int, int, int, str]]:
     return images
 
 
-def get_build_cache_summary() -> tuple[int, int, int]:
+def get_disk_usage_summary() -> dict[str, tuple[int, int, int]]:
     """
-    Returns (entry_count, total_bytes, reclaimable_bytes) for the build cache.
-    Uses 'docker system df'.
+    Returns {type: (count, size_bytes, reclaimable_bytes)} for each row of
+    'docker system df' (Images, Containers, Local Volumes, Build Cache).
     """
     try:
         result = subprocess.run(
-            ["docker", "system", "df"],
+            ["docker", "system", "df", "--format", "{{json .}}"],
             capture_output=True, text=True, check=True
         )
     except subprocess.CalledProcessError as e:
@@ -287,20 +288,19 @@ def get_build_cache_summary() -> tuple[int, int, int]:
         print("Docker is not installed or not available in PATH.", file=sys.stderr)
         sys.exit(1)
 
+    summary = {}
     for line in result.stdout.splitlines():
-        if re.match(r"build cache", line.strip(), re.IGNORECASE):
-            # "Build Cache   2753   0   71.37GB   70.33GB (98%)"
-            parts = line.split()
-            if len(parts) >= 6:
-                try:
-                    return (
-                        int(parts[2]),
-                        parse_size_to_bytes(parts[4]),
-                        parse_size_to_bytes(parts[5]),
-                    )
-                except (ValueError, IndexError):
-                    pass
-    return (0, 0, 0)
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        # Reclaimable format: "37.64GB (86%)"
+        reclaimable = row.get("Reclaimable", "0B").split(" ")[0]
+        summary[row["Type"]] = (
+            int(row.get("TotalCount", 0)),
+            parse_size_to_bytes(row.get("Size", "0B")),
+            parse_size_to_bytes(reclaimable),
+        )
+    return summary
 
 
 def print_section(title: str, rows: list, col_name: int, columns: list[tuple[str, int, str]]):
@@ -334,6 +334,8 @@ def print_section(title: str, rows: list, col_name: int, columns: list[tuple[str
 def main():
     argparse.ArgumentParser(description=__doc__).parse_args()
 
+    disk_usage = get_disk_usage_summary()
+
     # ── IMAGES ───────────────────────────────────────────────────────────────
     images = get_images_with_sizes()
 
@@ -352,15 +354,20 @@ def main():
             rows, col_name,
             [("UNIQUE", 12, ">"), ("SHARED", 12, ">"), ("VIRTUAL", 12, ">"), ("CONT.", 6, ">")],
         )
+        # Per-image SHARED/VIRTUAL values cannot be summed (shared layers would be
+        # counted once per image) - the real total on disk comes from 'docker system df'.
         total_unique = sum(img[1] for img in images)
-        total_virtual = sum(img[3] for img in images)
+        total_on_disk = max(disk_usage.get("Images", (0, 0, 0))[1], total_unique)
+        total_shared = total_on_disk - total_unique
         print(
-            f"{'TOTAL':<{col_name}}  {format_size(total_unique):>12}  {'':>12}  {format_size(total_virtual):>12}"
+            f"{'TOTAL':<{col_name}}  {format_size(total_unique):>12}  {format_size(total_shared):>12}"
+            f"  {format_size(total_on_disk):>12}"
         )
         print(f"\nNumber of images: {len(images)}")
         print("  UNIQUE  = layers unique to a given image (actual disk space used)")
         print("  SHARED  = layers shared with other images (stored on disk only once)")
-        print("  VIRTUAL = total size including shared layers\n")
+        print("  VIRTUAL = total size including shared layers")
+        print("  TOTAL   = shared layers counted once; TOTAL VIRTUAL = actual disk space used by all images\n")
 
     # ── CONTAINERS ──────────────────────────────────────────────────────────
     containers = get_containers_with_sizes()
@@ -380,11 +387,9 @@ def main():
             rows, col_name,
             [("OWN", 12, ">"), ("VIRTUAL", 12, ">"), ("STATUS", 10, "<")],
         )
+        # VIRTUAL is not summed - it includes the base image, which is shared by containers
         total_own = sum(c[1] for c in containers)
-        total_virt = sum(c[2] for c in containers)
-        print(
-            f"{'TOTAL':<{col_name}}  {format_size(total_own):>12}  {format_size(total_virt):>12}"
-        )
+        print(f"{'TOTAL':<{col_name}}  {format_size(total_own):>12}")
         print(f"\nNumber of containers: {len(containers)}")
         print("  OWN     = data written by the container on top of the base image")
         print("  VIRTUAL = own + shared base image\n")
@@ -430,7 +435,7 @@ def main():
     print()
 
     # ── BUILD CACHE ───────────────────────────────────────────────────────────
-    entries, total_bytes, reclaimable_bytes = get_build_cache_summary()
+    entries, total_bytes, reclaimable_bytes = disk_usage.get("Build Cache", (0, 0, 0))
     if entries > 0:
         pct = int(reclaimable_bytes / total_bytes * 100) if total_bytes else 0
         print("-" * 100)
@@ -440,6 +445,11 @@ def main():
         print("  Clean up:    docker builder prune")
         print("-" * 100)
     print()
+
+    # ── DOCKER SYSTEM DF (for comparison) ─────────────────────────────────────
+    df = subprocess.run(["docker", "system", "df"], capture_output=True, text=True, check=False)
+    print("Output of 'docker system df' for comparison:\n")
+    print(df.stdout or df.stderr)
 
 
 if __name__ == "__main__":
