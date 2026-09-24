@@ -9,7 +9,6 @@ import shlex
 import shutil
 import stat
 import subprocess
-import sys
 import tempfile
 
 
@@ -34,16 +33,13 @@ def get_local_name(repo_url: str) -> str:
 
 
 def run(cmd: list, cwd: str | None = None, env: dict | None = None) -> None:
-    """Runs a command, prints it, and exits the script on error."""
+    """Runs a command and prints it. Raises CalledProcessError on failure."""
     display = " ".join(cmd)
     if cwd:
         print(f"[{cwd}]$ {display}")
     else:
         print(f"$ {display}")
-    result = subprocess.run(cmd, cwd=cwd, env=env)
-    if result.returncode != 0:
-        print(f"Error: command failed with return code {result.returncode}")
-        sys.exit(1)
+    subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
 
 def ask_continue(path: str) -> bool:
@@ -55,16 +51,13 @@ def ask_continue(path: str) -> bool:
     return response.strip().lower() == "y"
 
 
-def ensure_removed(path: str, always: bool = False) -> None:
-    """Removes the folder if it exists. If always=False, asks the user."""
+def ensure_removed(path: str) -> None:
+    """Removes the folder if it exists."""
     if os.path.exists(path):
-        if not always and not ask_continue(path):
-            print("Aborted.")
-            sys.exit(0)
         shutil.rmtree(path)
 
 
-def validate_mirror_repo(repo_url: str) -> None:
+def validate_mirror_repo(repo_url: str) -> bool:
     """Verifies that the mirror-repo contains 'test' as a standalone word in its name.
 
     The word 'test' must be bounded by the start/end of the string or by a
@@ -80,7 +73,8 @@ def validate_mirror_repo(repo_url: str) -> None:
             "Examples of valid names: test, test-01, test-repo, my-test, my-test-v2\n"
             "Use --force to skip this check."
         )
-        sys.exit(1)
+        return False
+    return True
 
 
 def confirm_force(name: str) -> bool:
@@ -140,7 +134,7 @@ Example:
     return parser.parse_args()
 
 
-def main() -> None:
+def main() -> int:
     args = parse_args()
 
     source_repo = normalize_repo(args.source_repo)
@@ -150,15 +144,15 @@ def main() -> None:
     # GitHub repository names are case-insensitive
     if source_repo.lower() == mirror_repo.lower():
         print("Error: source-repo and mirror-repo are the same repository.")
-        sys.exit(1)
+        return 1
 
     if args.force:
         print("Warning: --force used, skipping the 'test' name safety check for mirror-repo.")
         if not confirm_force(local_name):
             print("Aborted.")
-            sys.exit(0)
-    else:
-        validate_mirror_repo(mirror_repo)
+            return 0
+    elif not validate_mirror_repo(mirror_repo):
+        return 1
 
     # Tmp folders with a __ prefix/suffix to avoid collisions
     tmp_init = f"__{local_name}_init__"
@@ -176,12 +170,15 @@ def main() -> None:
 
     try:
         # --- Check whether the final folder already exists ---
+        if os.path.exists(local_name) and not ask_continue(local_name):
+            print("Aborted.")
+            return 0
         ensure_removed(local_name)
 
         # --- Step 1: Create an empty repository and push it to mirror-repo ---
         print("\n=== Step 1: Resetting mirror-repo history ===")
         for tmp in (tmp_init, tmp_bare):
-            ensure_removed(tmp, always=True)
+            ensure_removed(tmp)
 
         os.makedirs(tmp_init)
         run(["git", "init"], cwd=tmp_init)
@@ -202,7 +199,7 @@ def main() -> None:
 
         # --- Step 2: Clone source-repo and push it to mirror-repo ---
         print("\n=== Step 2: Mirroring source-repo to mirror-repo ===")
-        ensure_removed(tmp_src, always=True)
+        ensure_removed(tmp_src)
 
         run(["git", "clone", "--mirror", source_repo, tmp_src], env=ssh_env)
         run(["git", "remote", "set-url", "origin", mirror_repo], cwd=tmp_src, env=ssh_env)
@@ -232,10 +229,15 @@ def main() -> None:
         print(f"\nDone! Mirror repo cloned to ./{local_name}/")
         print(f"  origin -> {mirror_repo}  (fetch + push)")
         print(f"  upstream -> {source_repo}  (fetch only, push DISABLED)")
+        return 0
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: command failed with return code {e.returncode}")
+        return 1
 
     finally:
         os.unlink(askpass_path)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
