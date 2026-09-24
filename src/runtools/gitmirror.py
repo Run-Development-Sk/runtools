@@ -77,12 +77,17 @@ def validate_mirror_repo(repo_url: str) -> bool:
     return True
 
 
-def confirm_force(name: str) -> bool:
-    """Asks the user to type the mirror-repo name to confirm overwriting it."""
+def confirm_force(repo_url: str) -> bool:
+    """Asks the user to type the mirror-repo 'owner/name' to confirm overwriting it.
+
+    The full 'owner/name' is required because source-repo and mirror-repo often
+    share the repository name and differ only in the owner.
+    """
+    name = repo_url.removeprefix("git@github.com:").removesuffix(".git")
     try:
         response = input(
             f"All history of mirror-repo '{name}' will be irreversibly overwritten.\n"
-            "Type the mirror-repo name to confirm: "
+            f"Type '{name}' to confirm: "
         )
     except EOFError:
         return False
@@ -148,7 +153,7 @@ def main() -> int:
 
     if args.force:
         print("Warning: --force used, skipping the 'test' name safety check for mirror-repo.")
-        if not confirm_force(local_name):
+        if not confirm_force(mirror_repo):
             print("Aborted.")
             return 0
     elif not validate_mirror_repo(mirror_repo):
