@@ -1,5 +1,5 @@
 ---
-name: code-reviewer
+name: run.code-reviewer
 description: >
   Performs a code review of changed code in the runtools project (helper
   Python CLI scripts). Checks correctness, security, and adherence to project

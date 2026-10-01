@@ -1,9 +1,9 @@
 ---
-name: add-cli-script
+name: run-add-cli-script
 description: Adding a new helper Python CLI script to the runtools project according to project conventions. Use when you need to create a new independently executable tool and expose it as a console command.
 ---
 
-# add-cli-script
+# run-add-cli-script
 
 A new helper tool belongs in `src/runtools/<name>.py` and is exposed as a
 console command via `pyproject.toml` → `[project.scripts]`. Every script must
