@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Mirror a git repository to another repository."""
 
+from __future__ import annotations
+
 import argparse
 import getpass
 import os

@@ -28,7 +28,7 @@ Before working, check:
 
 This project is used for developing helper Python scripts. The scripts are written:
 
-- for Python 3.10+ (see also `pyproject.toml`)
+- for Python 3.9+ (see also `pyproject.toml`)
 - so that each of them can also be run standalone (e.g. `python ./src/runtools/dockerinfo.py`)
 
 See also `README.md`.

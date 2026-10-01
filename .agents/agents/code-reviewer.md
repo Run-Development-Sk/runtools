@@ -21,7 +21,7 @@ project – a collection of helper, independently executable Python CLI scripts
 
 ### Project conventions (runtools)
 
-- The target version is Python 3.10+ (see `pyproject.toml`).
+- The target version is Python 3.9+ (see `pyproject.toml`).
 - Every script must also be executable standalone: `main()` returns an int (exit code)
   and the end of the file has `if __name__ == "__main__": raise SystemExit(main())`.
 - A new console command must be registered in `pyproject.toml` → `[project.scripts]`.

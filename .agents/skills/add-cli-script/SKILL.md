@@ -11,7 +11,7 @@ also be executable standalone (`python ./src/runtools/<name>.py`).
 
 ## Conventions (pattern based on existing scripts)
 
-- The target version is Python 3.10+ (see `pyproject.toml`).
+- The target version is Python 3.9+ (see `pyproject.toml`).
 - Prefer the standard library; add a new dependency via the package manager (pip),
   not by manually editing `pyproject.toml`.
 - Command-line arguments are parsed with `argparse` (also for a script without
